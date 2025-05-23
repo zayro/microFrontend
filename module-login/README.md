@@ -33,3 +33,15 @@ pnpm build
 ```sh
 pnpm lint
 ```
+
+### Theme PrimeVue
+
+```sh
+pnpm add primevue @primeuix/themes
+```
+
+### Handler tanstack
+
+```sh
+pnpm add @tanstack/vue-query
+```
