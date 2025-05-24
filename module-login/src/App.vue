@@ -1,6 +1,7 @@
 <script setup>
 import { RouterView } from 'vue-router'
 
+
 window.addEventListener('offline', () => {
   console.log('offline')
 })
@@ -39,6 +40,6 @@ window.onload = function () {
       <!-- ROUTE END  -->
     </router-view>
 
-    <VueQueryDevtools />
+
   </div>
 </template>
