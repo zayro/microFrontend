@@ -24,16 +24,23 @@ const items = ref([
   {
     label: 'Perfil',
     icon: 'pi pi-user',
-
+    command: () => {
+      showPerfil.value = true;
+    }
   },
   {
     label: 'Configuración',
     icon: 'pi pi-cog',
-
+    command: () => {
+      showConfiguracion.value = true;
+    }
   },
   {
     label: 'Salir',
     icon: 'pi pi-sign-out',
+    command: () => {
+      showSalir.value = true;
+    }
   }
 ])
 
@@ -48,14 +55,8 @@ const onDockItemClick = (event, item) => {
 
 onMounted(() => {
 
-
-
-
-  document.title = 'Login'
+  document.title = 'Welcome to the Dashboard'
   document.documentElement.style.setProperty('--animate-duration', '.9s')
-
-
-
 
 })
 </script>
@@ -231,7 +232,7 @@ onMounted(() => {
 .welcome-container {
   min-height: 100vh;
   width: 100vw;
-  background: linear-gradient(120deg, #d1d1d1 0%, #e4edf8 100%);
+  background: linear-gradient(120deg, #f0f4ff 0%, #e0e9f7 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
