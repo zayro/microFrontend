@@ -159,6 +159,10 @@ onMounted(() => {
 </template>
 
 <style scoped="css">
+.p-card {
+  background: #b9b9b924 !important;
+}
+
 .p-avatar {
   width: 120px;
   height: 120px;
