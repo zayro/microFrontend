@@ -23,7 +23,7 @@ app.use(PrimeVue, {
   theme: {
     preset: Aura,
     options: {
-      darkModeSelector: false || 'none',
+      darkModeSelector: '.my-app-dark',
     },
     zIndex: {
       modal: 1100,

@@ -1,6 +1,23 @@
 /* main.css */
 
-@import "tailwindcss";
-@import "tailwindcss-primeui"; 
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
 @import 'primeicons/primeicons.css';
- 
+
+/* En tu archivo main.css o global */
+/* En tu archivo main.css o global */
+.my-app-dark {
+  --my-custom-bg: #18181b;
+  --my-custom-text: #f4f4f5;
+  /* Puedes sobreescribir variables de PrimeVue también */
+  --p-surface-500: #23272f;
+  --p-surface-700: #18181b;
+}
+
+.my-app-light {
+  --my-custom-bg: #dbdbdb;
+  --my-custom-text: #18181b;
+  /* Puedes sobreescribir variables de PrimeVue también */
+  --p-surface-500: #ffffff;
+  --p-surface-700: #f4f4f5;
+}
