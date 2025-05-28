@@ -101,8 +101,6 @@ onMounted(() => {
 <template>
 
 
-
-
   <div class="flex flex-col min-h-screen items-center justify-between ">
     <div class="flex items-center justify-center flex-1 w-full">
       <Card class="flex flex-col text-center py-6 px-4 rounded-lg w-full md:w-1/4 lg:w-1/2 shadow-lg backdrop-blur-sm">
@@ -151,10 +149,6 @@ onMounted(() => {
       </Card>
     </div>
   </div>
-
-
-
-
 
 </template>
 

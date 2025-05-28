@@ -31,9 +31,9 @@
     </Dialog>
 
     <Dialog v-model:visible="showPerfil" modal
-      :style="fullscreenPerfil ? { width: '100vw', height: '100vh', maxWidth: '100vw', top: '0', left: '0', margin: '0', padding: '0' } : { width: '350px' }"
+      :style="fullscreenPerfil ? { width: '100vw', height: '100vh', maxWidth: '100vw', top: '0', left: '0', margin: '0', padding: '0' } : { width: 'calc(50vw - 4rem)' }"
       :contentStyle="fullscreenPerfil ? { height: 'calc(100vh - 4rem)', overflow: 'auto' } : {}"
-      :draggable="!fullscreenPerfil" :closable="true">
+      :draggable="!fullscreenPerfil" :closable="true" :breakpoints="{ '1199px': '75vw', '575px': '90vw' }">
       <template #header>
         <div class="flex justify-between items-center w-full">
           <span class="font-bold whitespace-nowrap">Perfil</span>

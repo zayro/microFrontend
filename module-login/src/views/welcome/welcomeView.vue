@@ -32,7 +32,7 @@ onMounted(() => {
 
       <div class="cards-container">
         <Card
-          class="flex flex-col text-center py-6 px-4 rounded-lg w-full max-w-md md:max-w-lg lg:max-w-xl shadow-lg backdrop-blur-sm mx-2">
+          class="flex flex-col text-center py-6 px-4 rounded-lg w-full max-w-md md:max-w-lg lg:max-w-xl shadow-lg backdrop-blur-sm mx-2 transition-transform transition-shadow duration-200 hover:-translate-y-2 hover:scale-105 hover:shadow-2xl">
           <template #header>
             <div class="card-icon">
               <i class="pi pi-users"></i>
@@ -49,7 +49,7 @@ onMounted(() => {
           </template>
         </Card>
         <Card
-          class="flex flex-col text-center py-6 px-4 rounded-lg w-full max-w-md md:max-w-lg lg:max-w-xl shadow-lg backdrop-blur-sm mx-2">
+          class="flex flex-col text-center py-6 px-4 rounded-lg w-full max-w-md md:max-w-lg lg:max-w-xl shadow-lg backdrop-blur-sm mx-2 transition-transform transition-shadow duration-200 hover:-translate-y-2 hover:scale-105 hover:shadow-2xl">
           <template #header>
             <div class="card-icon">
               <i class="pi pi-cog"></i>
@@ -66,7 +66,7 @@ onMounted(() => {
           </template>
         </Card>
         <Card
-          class="flex flex-col text-center py-6 px-4 rounded-lg w-full max-w-md md:max-w-lg lg:max-w-xl shadow-lg backdrop-blur-sm mx-2">
+          class="flex flex-col text-center py-6 px-4 rounded-lg w-full max-w-md md:max-w-lg lg:max-w-xl shadow-lg backdrop-blur-sm mx-2 transition-transform transition-shadow duration-200 hover:-translate-y-2 hover:scale-105 hover:shadow-2xl">
           <template #header>
             <div class="card-icon">
               <i class="pi pi-file"></i>
@@ -132,26 +132,6 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-.custom-card {
-  min-width: 260px;
-  max-width: 320px;
-  flex: 1 1 260px;
-  border-radius: 20px;
-  background: var(--p-surface-card, #fff);
-  box-shadow: 0 8px 32px rgba(60, 72, 88, 0.14), 0 1.5px 8px rgba(59, 130, 246, 0.10);
-  border: 1px solid var(--p-surface-border, #e5e7eb);
-  margin-bottom: 1.5rem;
-  transition: transform 0.2s, box-shadow 0.2s;
-  color: var(--p-text-color, #2c5185);
-  position: relative;
-  z-index: 1;
-}
-
-
-.custom-card:hover {
-  transform: translateY(-10px) scale(1.04);
-  box-shadow: 0 12px 32px rgba(60, 72, 88, 0.22);
-}
 
 .card-icon {
   display: flex;

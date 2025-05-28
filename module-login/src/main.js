@@ -3,6 +3,7 @@ import './assets/main.css'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { VueQueryPlugin } from '@tanstack/vue-query'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 import App from './App.vue'
 
@@ -17,6 +18,9 @@ import Aura from '@primeuix/themes/aura'
 import Material from '@primeuix/themes/material'
 
 const app = createApp(App)
+
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
 
 app.use(PrimeVue, {
   // Default theme configuration
@@ -94,7 +98,7 @@ app.use(VueQueryPlugin, {
   enableDevtoolsV6Plugin: true,
 })
 
-app.use(createPinia())
+app.use(pinia)
 app.use(VueQueryPlugin)
 app.use(router)
 app.use(ToastService)

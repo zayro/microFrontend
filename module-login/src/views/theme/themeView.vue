@@ -2,11 +2,18 @@
 import { onMounted } from 'vue'
 import { updatePrimaryPalette, updateSurfacePalette } from '@primeuix/themes';
 
+import { useAppStoreRef } from '@/stores/config'
+
 import Card from 'primevue/card';
 import Chip from 'primevue/chip';
 import Button from 'primevue/button';
 import Divider from 'primevue/divider';
 
+
+
+const appStore = useAppStoreRef(); // Instancia de AppStore
+
+console.log('AppStore:', appStore.themeSurfaces, appStore.themeColor);
 
 // Lista de temas disponibles
 const themes = [
@@ -107,10 +114,10 @@ const themeSurfaces = [
 
 ]
 
-
-
 // Cambia el tema dinámicamente según el color seleccionado
 const changePrimaryColor = (color = 'blue') => {
+  console.log('Cambiando color primario a:', color);
+  appStore.setThemeColor(color);
   updatePrimaryPalette({
     50: `{${color}.50}`,
     100: `{${color}.100}`,
@@ -128,7 +135,8 @@ const changePrimaryColor = (color = 'blue') => {
 
 // Cambia los colores de las superficies según el color seleccionado
 const changeSurfaces = (color = 'zinc') => {
-  console.log('changeSurfaces', `{${color}.50}`,);
+  console.log('Cambiando superficies a:', color);
+  appStore.setThemeSurfaces(color);
   updateSurfacePalette({
     50: `{${color}.50}`,
     100: `{${color}.100}`,
@@ -153,13 +161,18 @@ const setLightTheme = () => {
   document.documentElement.classList.remove('my-app-dark');
 }
 
+const setDefaultTheme = () => {
+  changePrimaryColor(appStore.themeColor);
+  changeSurfaces(appStore.themeSurfaces);
+}
+
 const resetTheme = () => {
   changePrimaryColor('blue');
-  changeSurfaces('stone');
+  changeSurfaces('zinc');
 }
 
 onMounted(() => {
-
+  setDefaultTheme();
   document.documentElement.style.setProperty('--animate-duration', '.9s')
   document.body.style.background = `linear-gradient(var(--p-surface-100), var(--p-surface-200))`;
 })

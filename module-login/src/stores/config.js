@@ -6,12 +6,12 @@ const SECRET_KEY_STORAGE = 'my secret key'
 const encryptStorage = new EncryptStorage(SECRET_KEY_STORAGE, {})
 
 const CryptStorage = {
-  setItem (key, state) {
+  setItem(key, state) {
     return encryptStorage.setItem(key, state)
   },
-  getItem (key) {
+  getItem(key) {
     return JSON.stringify(encryptStorage.getItem(key))
-  }
+  },
 }
 
 /**
@@ -24,78 +24,72 @@ export const useConfigStoreRef = defineStore('conf', {
     getPermissions: (state) => state?.conf?.permissions || {},
     getMenu: (state) => state?.conf?.menu || {},
     getInformation: (state) => state?.conf?.information || {},
-    getToken: (state) => state?.token || null
+    getToken: (state) => state?.token || null,
   },
   actions: {
-    setConfig (data) {
+    setConfig(data) {
       // this.conf = { ...this.conf, data }
       this.conf = data
     },
-    setToken (value) {
+    setToken(value) {
       this.token = value
     },
 
-    resetAll () {
+    resetAll() {
       this.conf = {}
       this.token = null
-    }
+    },
   },
   persist: {
     enabled: true,
     strategies: [
       { storage: CryptStorage, paths: ['conf'] },
       { key: 'accessToken', storage: localStorage, paths: ['token'] },
-      { key: 'author', storage: sessionStorage, paths: ['author'] }
-    ]
+      { key: 'author', storage: sessionStorage, paths: ['author'] },
+    ],
     // strategies: [{ storage: localStorage, paths: ['conf', 'author',  'token'] }]
-  }
+  },
 })
 
 /**
  * Conf App
  */
 
-const AppDefault = {
-  colorNavBackground: '#b0b0b0',
-  colorNavText: '#4e4e4e',
-  colorIconNav: '#4e4e4e',
-  backgroundSidenav: '#ffffff',
-  backgroundImageSidenav: '',
-  colorSidenav: '#000000'
-}
+const SETTINGS_LOCAL_STORAGE_KEY = 'app'
 
-export const useAppStoreRef = defineStore('app', {
-  state: () => ({ conf: AppDefault }),
+const settings = localStorage.getItem(SETTINGS_LOCAL_STORAGE_KEY)
+
+const AppDefault = settings
+  ? JSON.parse(settings)
+  : {
+      themeColor: 'blue',
+      themeSurfaces: 'zinc',
+    }
+
+export const useAppStoreRef = defineStore(SETTINGS_LOCAL_STORAGE_KEY, {
+  state: () => ({ themeSurfaces: AppDefault.themeSurfaces, themeColor: AppDefault.themeColor }),
   getters: {
-    getBackgroundImageSidenav: (state) => state.conf.backgroundImageSidenav || '',
-    getBackgroundSidenav: (state) => state.conf.backgroundSidenav || '',
-    getColorSidenav: (state) => state.conf.colorSidenav || ''
+    getThemeSurfaces: (state) => state.themeSurfaces || '',
+    getThemeColor: (state) => state.themeColor || '',
   },
   actions: {
-    setConfig (data) {
-      console.log('🚧 - setConfig - data', data)
-      this.conf = { ...this.conf, ...data }
-    }
+    setThemeSurfaces(value) {
+      this.themeSurfaces = value
+    },
+    setThemeColor(value) {
+      this.themeColor = value
+    },
+    resetUserConfig() {
+      this.themeSurfaces = AppDefault.themeSurfaces
+      this.themeColor = AppDefault.themeColor
+    },
   },
   persist: {
     enabled: true,
     strategies: [
       {
-        storage: localStorage
-      }
-    ]
-  }
-})
-
-const defaultState = {
-  foo: 'bar'
-}
-
-export const useFoo = defineStore('foo', {
-  state: () => ({ ...defaultState }),
-  actions: {
-    reset () {
-      Object.assign(this, defaultState)
-    }
-  }
+        storage: localStorage,
+      },
+    ],
+  },
 })
