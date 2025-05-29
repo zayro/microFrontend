@@ -13,7 +13,7 @@ import Divider from 'primevue/divider';
 
 const appStore = useAppStoreRef(); // Instancia de AppStore
 
-console.log('AppStore:', appStore.themeSurfaces, appStore.themeColor);
+
 
 // Lista de temas disponibles
 const themes = [
@@ -152,18 +152,24 @@ const changeSurfaces = (color = 'zinc') => {
   });
 }
 
-
 const setDarkTheme = () => {
   document.documentElement.classList.add('my-app-dark');
+  appStore.setThemeDark(true);
 }
 
 const setLightTheme = () => {
   document.documentElement.classList.remove('my-app-dark');
+  appStore.setThemeDark(false);
 }
 
 const setDefaultTheme = () => {
   changePrimaryColor(appStore.themeColor);
   changeSurfaces(appStore.themeSurfaces);
+  if (appStore.themeDark) {
+    setDarkTheme();
+  } else {
+    setLightTheme();
+  }
 }
 
 const resetTheme = () => {

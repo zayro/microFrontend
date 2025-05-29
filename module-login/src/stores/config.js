@@ -64,13 +64,19 @@ const AppDefault = settings
   : {
       themeColor: 'blue',
       themeSurfaces: 'zinc',
+      themeDark: false,
     }
 
 export const useAppStoreRef = defineStore(SETTINGS_LOCAL_STORAGE_KEY, {
-  state: () => ({ themeSurfaces: AppDefault.themeSurfaces, themeColor: AppDefault.themeColor }),
+  state: () => ({
+    themeSurfaces: AppDefault.themeSurfaces,
+    themeColor: AppDefault.themeColor,
+    themeDark: AppDefault.themeDark,
+  }),
   getters: {
     getThemeSurfaces: (state) => state.themeSurfaces || '',
     getThemeColor: (state) => state.themeColor || '',
+    getThemeDark: (state) => state.themeDark || false,
   },
   actions: {
     setThemeSurfaces(value) {
@@ -79,9 +85,13 @@ export const useAppStoreRef = defineStore(SETTINGS_LOCAL_STORAGE_KEY, {
     setThemeColor(value) {
       this.themeColor = value
     },
+    setThemeDark(value) {
+      this.themeDark = value
+    },
     resetUserConfig() {
       this.themeSurfaces = AppDefault.themeSurfaces
       this.themeColor = AppDefault.themeColor
+      this.themeDark = AppDefault.themeDark
     },
   },
   persist: {
