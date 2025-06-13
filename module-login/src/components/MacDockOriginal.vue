@@ -2,11 +2,11 @@
   <div>
     <!-- Dock fijo abajo -->
     <div class="dock-fixed-bottom">
-      <Dock :model="items" position="bottom" class="dock-mac">
+      <Dock :model="items" position="bottom">
         <template #item="{ item }">
           <button class="dock-btn-mac group" @click="onDockItemClick($event, item)">
-            <span class="  group-hover:scale-125 transition-transform duration-200">
-              <v-icon :name="item.icon" scale="2" :fill="item.color" />
+            <span class="dock-icon-wrapper group-hover:scale-125 transition-transform duration-200">
+              <i :class="item.icon"></i>
             </span>
             <span class="dock-label">{{ item.label }}</span>
           </button>
@@ -83,7 +83,6 @@ import { ref } from 'vue'
 import Dock from 'primevue/dock'
 import Dialog from 'primevue/dialog'
 import ThemeView from '@/views/theme/themeView.vue'
-import { useRouter } from 'vue-router'
 
 const showInicio = ref(false)
 const showPerfil = ref(false)
@@ -95,40 +94,31 @@ const fullscreenPerfil = ref(false)
 const fullscreenConfiguracion = ref(false)
 const fullscreenSalir = ref(false)
 
-const router = useRouter()
-
-const goRouteMain = () => router.push({ name: 'mainWelcome' })
-const goRoute = () => router.push({ name: 'mainThemeView' })
-
 const items = ref([
   {
     label: 'Inicio',
-    icon: 'fa-windows',
-    color: '#3b82f6',
+    icon: 'pi pi-home',
     command: () => {
-      goRouteMain();
+      showInicio.value = true;
     }
   },
   {
     label: 'Perfil',
-    icon: 'fa-user',
-    color: 'gray',
+    icon: 'pi pi-user',
     command: () => {
-      goRoute();
+      showPerfil.value = true;
     }
   },
   {
-    label: 'Conctacto',
-    icon: 'fa-mail-bulk',
-    color: 'gray',
+    label: 'Configuración',
+    icon: 'pi pi-cog',
     command: () => {
       showConfiguracion.value = true;
     }
   },
   {
     label: 'Salir',
-    icon: 'fa-power-off',
-    color: 'gray',
+    icon: 'pi pi-sign-out',
     command: () => {
       showSalir.value = true;
     }
@@ -152,47 +142,10 @@ function toggleFullscreen(dialog) {
 
 <style scoped>
 /* Copia aquí los estilos relacionados con el Dock y los Dialogs */
-
-.dock-mac {}
-
-/* Reemplaza el estilo actual de .p-dock-list-container */
-:deep(.p-dock-list-container) {
-  background: transparent;
-  backdrop-filter: blur(1px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  padding: 8px;
-  box-shadow:
-    0 8px 32px rgba(31, 38, 135, 0.15),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease-in-out;
-}
-
-/* Añade el efecto hover */
-:deep(.p-dock-list-container:hover) {
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow:
-    0 12px 40px rgba(31, 38, 135, 0.2),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-}
-
-/* Asegúrate de que el contenedor principal tenga el estilo correcto */
-:deep(.p-dock) {
-  background: transparent;
-  border: none;
-}
-
-/* Ajusta también el contenedor de la lista */
-:deep(.p-dock-list) {
-  padding: 0;
-  background: transparent;
-}
-
 .dock-fixed-bottom {
   position: fixed;
   left: 0;
-  bottom: 30px;
+  bottom: 10px;
   width: 100vw;
   z-index: 1200;
   display: flex;
@@ -209,43 +162,48 @@ function toggleFullscreen(dialog) {
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  transition: all 0.3s ease-in-out;
+  transition: transform 0.18s;
   position: relative;
-  pointer-events: auto;
-}
-
-
-
-.dock-btn-mac:hover {
-  transform: scale(1.1);
 }
 
 .dock-btn-mac:active {
   transform: scale(0.95);
 }
 
+.dock-icon-wrapper {
+  background: linear-gradient(135deg, var(--p-primary-400) 0%, var(--p-primary-600) 100%);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.7rem;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  margin-bottom: 0.3rem;
+  transition: transform 0.18s;
+}
 
 .dock-label {
   font-size: 0.85rem;
   color: #334155;
+  margin-top: 0.1rem;
   opacity: 0;
   pointer-events: none;
-  transition: all 0.3s ease-in-out;
+  transition: opacity 0.18s;
   position: absolute;
-  bottom: -2rem;
+  bottom: -1.5rem;
   left: 50%;
   transform: translateX(-50%);
-  backdrop-filter: blur(8px);
-  padding: 0.4rem 1rem;
-  border-radius: 12px;
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.15rem 0.7rem;
+  border-radius: 0.7rem;
+  box-shadow: 0 2px 8px rgba(60, 72, 88, 0.10);
   white-space: nowrap;
 }
 
 .dock-btn-mac:hover .dock-label {
   opacity: 1;
-  bottom: -2.5rem;
 }
 </style>

@@ -13,6 +13,12 @@ import PrimeVue from 'primevue/config'
 
 import ToastService from 'primevue/toastservice'
 
+// Icons
+import { OhVueIcon, addIcons } from 'oh-vue-icons'
+import * as FaIcons from 'oh-vue-icons/icons/fa'
+
+const Fa = Object.values({ ...FaIcons })
+
 // Themes
 import Aura from '@primeuix/themes/aura'
 import Material from '@primeuix/themes/material'
@@ -93,6 +99,10 @@ app.use(PrimeVue, {
     filterMatchModeAny: 'Cualquiera',
   },
 })
+
+addIcons(...Fa)
+
+app.component('v-icon', OhVueIcon)
 
 app.use(VueQueryPlugin, {
   enableDevtoolsV6Plugin: true,

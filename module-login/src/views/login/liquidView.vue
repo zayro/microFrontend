@@ -67,7 +67,7 @@ onMounted(() => {
         class="flex flex-col text-center py-8 px-6 rounded-2xl w-full max-w-md shadow-lg backdrop-blur-md bg-[var(--p-surface-card)] transition-colors duration-300">
         <template #content>
           <div class="text-center mb-6">
-            <Avatar :image="avatar" class="mx-auto mb-2 " shape="circle" />
+            <Avatar :image="avatar" class="mx-auto mb-2" shape="circle" />
             <div class="text-3xl font-semibold mb-2 text-[var(--p-text-color)]">Welcome Back</div>
             <span class="font-medium leading-6 text-[var(--p-text-secondary)]">Don't have an account?</span>
             <a class="font-medium no-underline ml-2 cursor-pointer text-[var(--p-primary-600)] hover:underline"
@@ -133,15 +133,62 @@ onMounted(() => {
     linear-gradient(135deg, var(--p-surface-500, #e5e7eb) 0%, var(--p-surface-900, #cbd5e1) 100%),
     url('@/assets/img/background/pattern5_black.png');
   background-blend-mode: overlay;
+  animation: gradient 35s ease infinite;
 }
 
 /* Elimina fondo y color fijos, usa variables de PrimeVue */
+
 .p-card {
-  background: var(--p-card-background);
-  color: var(--p-text-color);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.03),
+      rgba(255, 255, 255, 0.01));
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 8px 32px 0 rgba(31, 38, 135, 0.15),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
   border-radius: 1.25rem;
-  box-shadow: var(--p-card-shadow);
-  transition: background 0.3s, color 0.3s;
+  transition: all 0.3s ease-in-out;
+}
+
+.p-card:hover {
+  transform: translateY(-5px);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.05),
+      rgba(255, 255, 255, 0.02));
+  box-shadow:
+    0 12px 40px 0 rgba(31, 38, 135, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Mejora el efecto para los inputs */
+.p-inputtext {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(5px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Efecto hover para los inputs */
+.p-inputtext:hover,
+.p-inputtext:focus {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .p-avatar {

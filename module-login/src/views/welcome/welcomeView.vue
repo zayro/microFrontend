@@ -23,7 +23,7 @@ onMounted(() => {
   <div>
     <!--Header Menubar -->
 
-    <ModernMenubar :title="'Bienvenido'" :currentTime="currentTime" />
+
 
 
     <!--Content Main -->
@@ -85,8 +85,7 @@ onMounted(() => {
 
     </div>
 
-    <!-- Footer moderno -->
-    <MacDock />
+
 
   </div>
 </template>
