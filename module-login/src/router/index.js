@@ -6,9 +6,22 @@ import welcomeView from '@/views/welcome/welcomeView.vue'
 import liquidView from '@/views/login/liquidView.vue'
 import mainView from '@/views/main/mainView.vue'
 
+// Pagina de Error 404
+import NotFoundView from '@/views/404/404.vue'
+
+// Modulo Firma Electronica
+import firmaElectronicaView from '@/views/main/modules/firmaElectronica/firmaElectronicaView.vue'
+import politicasView from '@/views/main/modules/firmaElectronica/politicas/politicasView.vue'
+import verificarView from '@/views/main/modules/firmaElectronica/verificar/verificarView.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/:catchAll(.*)',
+      name: 'NotFound',
+      component: NotFoundView,
+    },
     {
       path: '/',
       name: 'defaultView',
@@ -35,9 +48,42 @@ const router = createRouter({
           meta: { transition: 'fade' },
         },
         {
+          // Ruta por defecto para /main/
+          path: '',
+          name: 'mainWelcome',
+          component: welcomeView,
+          meta: { transition: 'fade' },
+        },
+        {
           path: '/theme',
           name: 'mainThemeView',
           component: themeView,
+        },
+        {
+          path: '/firmaElectronica',
+          name: 'firmaElectronica',
+          component: firmaElectronicaView,
+          meta: { transition: 'fade' },
+          children: [
+            {
+              path: '/',
+              name: 'politicasView',
+              component: politicasView,
+              meta: { transition: 'fade' },
+            },
+            {
+              path: '',
+              name: 'politicasView',
+              component: politicasView,
+              meta: { transition: 'fade' },
+            },
+            {
+              path: 'verificarFirma',
+              name: 'verificarView',
+              component: verificarView,
+              meta: { transition: 'fade' },
+            },
+          ],
         },
       ],
     },
@@ -47,7 +93,7 @@ const router = createRouter({
       component: welcomeView,
     },
     {
-      path: '/liquid',
+      path: '/liquid/',
       name: 'liquidView',
       component: liquidView,
     },

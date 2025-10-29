@@ -5,7 +5,7 @@ import MacDock from '@/components/MacDock.vue'
 import ModernMenubar from '@/components/ModernMenubar.vue'
 
 
-console.groupCollapsed('info Vite')
+console.groupCollapsed('info Vite Main')
 console.log('----------------------', import.meta.env.BASE_URL)
 console.log('----------------------', import.meta.env.VITE_DEBUG)
 console.groupEnd()
@@ -26,20 +26,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
 
-    <ModernMenubar :title="'Bienvenido'" :currentTime="currentTime" />
 
-    <!-- ROUTING con transición -->
-    <router-view v-slot="{ Component }">
-      <transition name="fade" mode="out-in">
-        <component :is="Component" />
-      </transition>
-    </router-view>
+  <ModernMenubar :title="'Bienvenido'" :currentTime="currentTime" />
 
-    <!-- Footer moderno -->
-    <MacDock />
-  </div>
+  <!-- ROUTING con transición -->
+  <router-view v-slot="{ Component }">
+    <transition name="fade" mode="out-in">
+      <component :is="Component" />
+    </transition>
+  </router-view>
+
+  <!-- Footer moderno -->
+  <MacDock :dockPosition="'bottom-center'" />
+
 </template>
 
 <style scoped>

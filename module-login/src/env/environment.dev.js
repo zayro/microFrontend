@@ -1,8 +1,9 @@
 export const CONSTANT = Object.freeze({
   URL: {
-    API: 'http://localhost:4000/api/v1',
-    PUBLIC: 'http://localhost:4000/public/',
-    UPLOAD: 'http://localhost:4000/public/uploads/',
+    API: 'https://2bdnvsvc-4000.use.devtunnels.ms/api/v1',
+    API_V2: 'https://2bdnvsvc-4000.use.devtunnels.ms/api/v2',
+    PUBLIC: 'https://2bdnvsvc-4000.use.devtunnels.ms/public/',
+    UPLOAD: 'https://2bdnvsvc-4000.use.devtunnels.ms/public/uploads/',
     SOCKET: 'ws://localhost:4000',
     COUCHDB: 'http://admin:zayro1989@localhost:5984/developer',
   },

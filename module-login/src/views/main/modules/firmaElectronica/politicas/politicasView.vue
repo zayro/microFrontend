@@ -1,0 +1,285 @@
+<script setup>
+import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { useConfigStoreRef } from '@/stores/config'
+import { useToast } from "primevue/usetoast";
+import { useRouter } from 'vue-router'
+import Card from 'primevue/card';
+
+import Button from 'primevue/button';
+import Checkbox from 'primevue/checkbox';
+import { useMutation } from '@tanstack/vue-query'
+import Divider from 'primevue/divider';
+import Fieldset from 'primevue/fieldset';
+import Toast from 'primevue/toast';
+
+import FileUpload from 'primevue/fileupload';
+
+import { ApiFirmaElectronica } from '@/api/apiFirmaElectronica'
+
+const confStore = useConfigStoreRef()
+
+const formData = reactive({
+  email: confStore.getUser.value.email, subject: 'Codigo Confirmacion', body: 'test', lista_consentimientos: [
+    { name: "He leído y estoy de acuerdo con la información suministrada", checked: false },
+    { name: "Otorgo mi consentimiento electrónico sobre el contenido del documento", checked: false }
+  ]
+})
+
+const toast = useToast();
+
+const validateForm = computed(() => {
+
+  const validar = formData.lista_consentimientos.every(item => item.checked);
+  console.log('validar', validar);
+  return validar
+})
+
+const { sendVerificationEmail, consultarDocumentos, validarRostro } = ApiFirmaElectronica()
+
+
+const lista_documentos_izquierda = ref([]);
+const lista_documentos_derecha = ref([]);
+const cantidadMostrar = ref(0);
+const validacionRostro = ref(false);
+
+
+consultarDocumentos(confStore.getUser.value.username).then(response => {
+  console.log('Documentos consultados:', response.data.length);
+  const totalDocumentos = response.data.length;
+  cantidadMostrar.value = Math.ceil(totalDocumentos / 2);
+  lista_documentos_izquierda.value = response.data.slice(0, cantidadMostrar.value);
+  lista_documentos_derecha.value = response.data.slice(cantidadMostrar.value);
+
+
+}).catch(error => {
+  console.error('Error al consultar documentos:', error);
+});
+
+
+const fileupload = ref();
+
+const upload = async (event) => {
+  if (fileupload.value.files && fileupload.value.files[0]) {
+    try {
+      const file = fileupload.value.files[0];
+      const response = await validarRostro(file);
+      console.log('Validación de rostro:', response);
+      if (response.tiene_rostro) {
+        validacionRostro.value = true;
+        toast.add({ severity: 'success', summary: 'Éxito', detail: 'Rostro validado correctamente', life: 3000 });
+        fileupload.value.clear(); // Limpia el input después de un envío exitoso
+      } else {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'No se detectó un rostro en la imagen', life: 3000 });
+      }
+    } catch (error) {
+      console.error('Error al validar rostro:', error);
+      toast.add({ severity: 'error', summary: 'Error', detail: 'Error al validar el rostro', life: 3000 });
+    }
+  } else {
+    toast.add({ severity: 'warn', summary: 'Advertencia', detail: 'Por favor seleccione una imagen', life: 3000 });
+  }
+};
+
+const onUpload = () => {
+  toast.add({ severity: 'info', summary: 'Success', detail: 'File Uploaded', life: 3000 });
+};
+
+
+
+const router = useRouter()
+
+const onFormSubmit = () => {
+
+  console.log('Form submitted!', formData);
+
+  const todosLosCamposCompletos = formData.lista_consentimientos.every(item => item.checked);
+
+  if (todosLosCamposCompletos && validacionRostro.value) {
+    toast.add({ severity: 'success', summary: 'Formulario enviado correctamente.', life: 3000 });
+    mutateLogin({ ...formData })
+    //router.push({ name: 'verificarView' })
+  } else {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Por favor, complete todos los campos.', life: 3000 });
+  }
+
+};
+
+const toggleConsentimiento = (index) => {
+  console.log('Toggling consentimiento at index:', index);
+  console.log('Before toggle:', formData.lista_consentimientos[index].checked);
+  formData.lista_consentimientos[index].checked = !formData.lista_consentimientos[index].checked;
+
+};
+
+const { mutate: mutateLogin, data, error, isPending, isError, isSuccess, isLoading } = useMutation({
+  mutationFn: sendVerificationEmail,
+})
+
+
+
+watch(data, (val) => {
+  if (val) {
+    console.log('Data changed:', val);
+  }
+})
+
+watch(isSuccess, (val) => {
+  if (val) {
+    toast.add({ severity: 'success', summary: 'Éxito', detail: '¡Ingreso exitoso!', life: 3000 })
+
+  }
+})
+
+watch(isError, (val) => {
+  if (val) {
+    toast.add({ severity: 'error', summary: 'Error', detail: error.value?.message || 'Error desconocido', life: 4000 })
+  }
+})
+
+
+onMounted(() => {
+  document.body.style.overflowX = 'auto'
+  document.body.style.overflowY = 'auto'
+  document.title = 'Politicas y Consentimientos'
+
+})
+
+</script>
+
+<template>
+
+
+
+
+  <div class="flex flex-col min-h-screen items-center justify-between ">
+    <div class="flex items-center justify-center flex-1 w-full">
+      <Card class="flex flex-col text-center py-6 px-4 rounded-lg w-full  shadow-lg backdrop-blur-sm mx-2">
+        <template #content>
+
+          <Form @submit.prevent="onFormSubmit">
+
+            <div class="card">
+              <Fieldset legend="Consentimiento Firma Electrónica Gente Util S.A">
+
+
+                <div class=" card flex justify-center">
+                  <div class="flex justify-center flex-col gap-4">
+
+                    <p class="text-justify">Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquam facilis
+                      fugiat corporis a sas
+                      ducimus quae reiciendis accusamus cumque modi tempore sapiente alias in, ipsum vitae, quaerat
+                      odio ad voluptatibus praesentium. Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                      Incidunt omnis corporis accusantium praesentium dolorum, nam maiores provident fugiat delectus
+                      reprehenderit ab deleniti hic totam repellendus ipsam sapiente, optio excepturi quidem!</p>
+
+
+                    <div class="flex flex-col gap-2">
+
+                      <div class="card flex justify-center">
+                        <div class="flex flex-col gap-4">
+                          <div v-for="(consentimiento, index) of formData.lista_consentimientos"
+                            :key="consentimiento.key" class="flex items-center gap-2">
+                            <Checkbox :inputId="consentimiento.key" name="consentimiento" :value="consentimiento.name"
+                              @change="toggleConsentimiento(index)" />
+                            <label :for="consentimiento.key">{{ consentimiento.name }}</label>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                  </div>
+                </div>
+              </Fieldset>
+
+              <Divider />
+
+              <Fieldset legend="Validación de Rostro">
+                <div class="card flex flex-wrap gap-6 items-center justify-between">
+                  <FileUpload ref="fileupload" mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000"
+                    filelabel="Imagen de rostro" chooseLabel="Seleccionar Imagen" uploadLabel="Validar Rostro"
+                    @upload="onUpload" />
+                  <Button label="Cargar Imagen" @click="upload" severity="secondary" />
+                </div>
+              </Fieldset>
+
+              <Divider />
+
+
+              <Fieldset legend="Firma electrónica de documentos">
+
+                <div class="card flex justify-center">
+                  <div class="flex justify-center flex-col gap-4">
+                    <p class="text-left">Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquam facilis
+                      fugiat corporis a
+                      ducimus quae reiciendis accusamus cumque modi tempore sapiente alias in, ipsum vitae, quaerat
+                      odio ad voluptatibus praesentium. Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                      Incidunt omnis corporis accusantium praesentium dolorum, nam maiores provident fugiat delectus
+                      reprehenderit ab deleniti hic totam repellendus ipsam sapiente, optio excepturi quidem!</p>
+                    <p>A continuación se relacionan los documentos que autorizo:</p>
+                    <div class="card flex justify-center">
+
+
+                      <ul class="w-full md:w-80">
+                        <li v-for="(city, index) in lista_documentos_izquierda" :key="city.iduser_documentos">{{
+                          city.nombredocumento }}</li>
+                      </ul>
+
+                      <Divider layout="vertical" />
+
+
+                      <ul class="w-full md:w-80">
+                        <li v-for="doc in lista_documentos_derecha" :key="doc.iduser_documentos">{{ doc.nombredocumento
+                          }}</li>
+                      </ul>
+
+                    </div>
+                    <Button type="submit" severity="secondary" :disabled="!validateForm" label="Firmar" />
+                  </div>
+                </div>
+              </Fieldset>
+
+
+            </div>
+
+          </Form>
+        </template>
+      </Card>
+
+    </div>
+  </div>
+
+  <Toast />
+</template>
+
+<style scoped>
+ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  /* Espacio para la viñeta */
+  text-align: left;
+  /* Alinea el texto a la izquierda */
+}
+
+.cards-container {
+  display: flex;
+  flex: 0 0 100%;
+  gap: 2.5rem;
+  justify-content: center;
+  align-items: center;
+  /* Cambiado de stretch a center */
+  margin: 0;
+  /* Elimina el margen vertical */
+  flex-wrap: wrap;
+}
+
+
+.cards-container {
+  display: flex;
+  gap: 2.5rem;
+  justify-content: center;
+  align-items: stretch;
+  margin: 2.5rem 0;
+  flex-wrap: wrap;
+}
+</style>

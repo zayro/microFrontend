@@ -7,7 +7,7 @@
         <span class="green"></span>
       </div>
       <div>
-        <span><strong>{{ title }}</strong></span>
+        <span><strong>{{ title }} - {{ confStore.getUser.value.nombrecompleto }}</strong></span>
       </div>
     </template>
     <template #end>
@@ -21,6 +21,11 @@
 <script setup>
 import { defineProps, ref, onMounted, onUnmounted } from 'vue'
 import Menubar from 'primevue/menubar'
+import { useConfigStoreRef } from '@/stores/config'
+
+const confStore = useConfigStoreRef()
+
+console.log('Usuario en Menubar:', confStore.getUser.value)
 
 const currentTime = ref('')
 

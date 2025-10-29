@@ -18,13 +18,33 @@ const CryptStorage = {
  * Conf User
  */
 
+const SETTINGS_LOCAL_STORAGE_KEY_CONF = 'conf'
+
+const settings_conf = localStorage.getItem(SETTINGS_LOCAL_STORAGE_KEY_CONF)
+
+const ConfDefault = settings_conf
+  ? JSON.parse(settings_conf)
+  : {
+      conf: {},
+      author: 'Marlon Zayro Arias Vargas',
+      token: '',
+      user: {},
+    }
+
 export const useConfigStoreRef = defineStore('conf', {
-  state: () => ({ conf: {}, author: 'Marlon Zayro Arias Vargas', token: '' }),
+  state: () => ({
+    conf: ConfDefault.conf,
+    author: ConfDefault.author,
+    token: ConfDefault.token,
+    user: ConfDefault.user,
+  }),
   getters: {
     getPermissions: (state) => state?.conf?.permissions || {},
     getMenu: (state) => state?.conf?.menu || {},
     getInformation: (state) => state?.conf?.information || {},
     getToken: (state) => state?.token || null,
+    getUser: (state) => state?.user || {},
+    getAuthor: (state) => state?.author,
   },
   actions: {
     setConfig(data) {
@@ -34,12 +54,23 @@ export const useConfigStoreRef = defineStore('conf', {
     setToken(value) {
       this.token = value
     },
-
+    setUser(value) {
+      this.user = { ...this.user, value }
+    },
     resetAll() {
       this.conf = {}
       this.token = null
     },
   },
+  persist: {
+    enabled: true,
+    strategies: [
+      {
+        storage: localStorage,
+      },
+    ],
+  },
+  /*
   persist: {
     enabled: true,
     strategies: [
@@ -49,6 +80,7 @@ export const useConfigStoreRef = defineStore('conf', {
     ],
     // strategies: [{ storage: localStorage, paths: ['conf', 'author',  'token'] }]
   },
+  */
 })
 
 /**

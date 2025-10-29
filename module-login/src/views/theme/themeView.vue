@@ -2,7 +2,7 @@
 import { onMounted } from 'vue'
 import { updatePrimaryPalette, updateSurfacePalette } from '@primeuix/themes';
 
-import { useAppStoreRef } from '@/stores/config'
+import { useAppStoreRef, useConfigStoreRef } from '@/stores/config'
 
 import Card from 'primevue/card';
 import Chip from 'primevue/chip';
@@ -12,6 +12,7 @@ import Divider from 'primevue/divider';
 
 
 const appStore = useAppStoreRef(); // Instancia de AppStore
+const configStore = useConfigStoreRef(); // Instancia de ConfigStore
 
 
 
