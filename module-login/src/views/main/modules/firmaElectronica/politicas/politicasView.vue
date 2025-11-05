@@ -16,7 +16,29 @@ import FileUpload from 'primevue/fileupload';
 
 import { ApiFirmaElectronica } from '@/api/apiFirmaElectronica'
 
+import { ApiInducciones } from '@/api/apiInducciones';
+
+import { CONSTANT } from '@/env/index.js'
+
+
+const SERVER = CONSTANT.URL.SERVER
+
 const confStore = useConfigStoreRef()
+
+const visible = ref(false);
+
+
+// 1. Declara el evento que puede emitir
+// Nota: usamos 'enviar-sidebar' para que coincida con el listener en el padre
+const emit = defineEmits(['enviar-sidebar']);
+
+function toggleSidebar() {
+  // 2. Emite el evento con los datos de la ruta
+  visible.value = true;
+  emit('enviar-sidebar', visible.value);
+}
+
+
 
 const formData = reactive({
   email: confStore.getUser.value.email, subject: 'Codigo Confirmacion', body: 'test', lista_consentimientos: [
@@ -36,11 +58,21 @@ const validateForm = computed(() => {
 
 const { sendVerificationEmail, consultarDocumentos, validarRostro } = ApiFirmaElectronica()
 
+const { fetchInducciones, getFileInducciones } = ApiInducciones()
+
 
 const lista_documentos_izquierda = ref([]);
 const lista_documentos_derecha = ref([]);
 const cantidadMostrar = ref(0);
 const validacionRostro = ref(false);
+const lista_inducciones = ref([]);
+
+fetchInducciones(confStore.getUser.value.username).then(response => {
+  console.log('Inducciones fetchInducciones:', response.data);
+  lista_inducciones.value = response.data;
+}).catch(error => {
+  console.error('Error al fetchInducciones:', error);
+});
 
 
 consultarDocumentos(confStore.getUser.value.username).then(response => {
@@ -49,8 +81,6 @@ consultarDocumentos(confStore.getUser.value.username).then(response => {
   cantidadMostrar.value = Math.ceil(totalDocumentos / 2);
   lista_documentos_izquierda.value = response.data.slice(0, cantidadMostrar.value);
   lista_documentos_derecha.value = response.data.slice(cantidadMostrar.value);
-
-
 }).catch(error => {
   console.error('Error al consultar documentos:', error);
 });
@@ -144,6 +174,8 @@ onMounted(() => {
 
 })
 
+
+const URL_DOWNLOAD = SERVER + '/v1/pdf/getFile?file_name='
 </script>
 
 <template>
@@ -160,7 +192,7 @@ onMounted(() => {
 
             <div class="card">
               <Fieldset legend="Consentimiento Firma Electrónica Gente Util S.A">
-
+                <!-- <Button icon="pi pi-arrow-right" type="button" @click="toggleSidebar" /> -->
 
                 <div class=" card flex justify-center">
                   <div class="flex justify-center flex-col gap-4">
@@ -239,6 +271,26 @@ onMounted(() => {
                 </div>
               </Fieldset>
 
+
+              <Fieldset legend="Inducciones Realizadas">
+
+                <div class="card flex justify-center">
+                  <div class="gap-4">
+                    <p class="text-left">A continuación se relacionan las inducciones que ha realizado:</p>
+                    <div class="card">
+                      <div class=" flex  w-full  justify-between lg:flex-row sm:flex-col">
+                        <div v-for="(induccion, index) in lista_inducciones" :key="induccion.id"
+                          class="p-2 md:p-4 lg:p-6">
+                          <v-icon :name="'fa-file-pdf'" scale="1" :fill="'#800000'" />
+                          <a v-bind:href="URL_DOWNLOAD + induccion.nombre" download>{{ induccion.nombre }}</a>
+                        </div>
+                      </div>
+                    </div>
+                    <Divider />
+
+                  </div>
+                </div>
+              </Fieldset>
 
             </div>
 

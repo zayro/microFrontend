@@ -1,16 +1,43 @@
 <script setup>
+import { ref, watch } from "vue";
 import { RouterView } from 'vue-router'
+import Sidebar from 'primevue/sidebar';
+
+
+const visible = ref(false)
+
+function handlerSidebar(ruta) {
+  console.log('Recibido del hijo:', ruta);
+  visible.value = ruta;
+  // Aquí podrías actualizar la ruta usando $router o alguna otra lógica
+}
+
+
+
+
+watch(visible, (v) => {
+  console.log('Visible Sidebar changed (watch):', v)
+})
 
 </script>
 
 <template>
-  <div class="welcome-container">
 
+  <div class="welcome-container">
+    <div class="card flex justify-content-center">
+      <Sidebar v-model:visible="visible" header="Sidebar">
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
+          magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+          consequat.</p>
+      </Sidebar>
+
+    </div>
 
     <div class="cards-container">
 
       <router-view v-slot="{ Component }">
-        <component :is="Component" />
+        <!-- Pasamos la prop visibleSidebar (vía proxy) y un setter para que el componente hijo pueda actualizarla -->
+        <component :is="Component" @enviar-sidebar="handlerSidebar" />
       </router-view>
 
     </div>

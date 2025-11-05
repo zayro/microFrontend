@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeMount } from 'vue'
 
-import MacDock from '@/components/MacDock.vue'
+
 import ModernMenubar from '@/components/ModernMenubar.vue'
 
 
@@ -28,21 +28,50 @@ onMounted(() => {
 <template>
 
 
-  <ModernMenubar :title="'Bienvenido'" :currentTime="currentTime" />
+  <header>
+    <ModernMenubar :title="'Bienvenido'" :currentTime="currentTime" />
 
-  <!-- ROUTING con transición -->
-  <router-view v-slot="{ Component }">
-    <transition name="fade" mode="out-in">
-      <component :is="Component" />
-    </transition>
-  </router-view>
+  </header>
 
-  <!-- Footer moderno -->
-  <MacDock :dockPosition="'bottom-center'" />
+
+  <section>
+    <!-- ROUTING con transición -->
+    <router-view v-slot="{ Component }">
+      <transition name="fade" mode="out-in">
+        <component :is="Component" />
+      </transition>
+    </router-view>
+  </section>
+
+
+  <footer>
+    <!-- Footer moderno -->
+
+  </footer>
+
 
 </template>
 
 <style scoped>
+header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+section {
+  top: 60px;
+}
+
+
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
 .main-layout {
   min-height: 100vh;
   display: flex;

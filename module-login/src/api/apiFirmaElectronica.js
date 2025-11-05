@@ -2,6 +2,7 @@ import { CONSTANT } from '@/env/index.js'
 
 const URL = CONSTANT.URL.API
 const API_V2 = CONSTANT.URL.API_V2
+const SERVER = CONSTANT.URL.SERVER
 
 export function ApiFirmaElectronica() {
   // Ejemplo de postLogin en apiUser.js
@@ -64,9 +65,10 @@ export function ApiFirmaElectronica() {
 
   async function consultarDocumentos(identificacion) {
     // Aquí puedes usar fetch o axios
-    const response = await fetch(API_V2 + '/general/search', {
+    const response = await fetch(SERVER + '/v2/general/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      withCredentials: true,
       body: JSON.stringify({
         query: 'vista_contratos',
         fields: '*',
