@@ -10,12 +10,10 @@ import InputIcon from 'primevue/inputicon'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Avatar from 'primevue/avatar'
-import Image from 'primevue/image'
 import { ApiUser } from '@/api/apiUser'
 
 import imgBodyBackGround from '@/assets/img/background/pattern5_black.png'
 import avatar from '@/assets/img/profile/avatar/user_256x256.png'
-import login from '@/assets/img/login/logo_gu.png'
 
 const form = reactive({ username: '', password: '' })
 const confStore = useConfigStoreRef()
@@ -24,6 +22,9 @@ const toast = useToast()
 
 const validateForm = computed(() => form.username !== '' && form.password !== '')
 const { postLoginMb } = ApiUser()
+
+const goRouteCreate = () => router.push({ name: 'createUserView' })
+const goRouteRecovery = () => router.push({ name: 'recoveryPass' })
 
 const { mutate: mutateLogin, data, error, isPending, isError, isSuccess, isLoading } = useMutation({
   mutationFn: postLoginMb,
@@ -35,9 +36,9 @@ const handleLogin = () => {
 
 watch(data, (val) => {
   if (val) {
-    console.log('Data changed:', val)
-    confStore.setToken(val.token)
-    confStore.setUser({ username: val.result[0].nroidentificacion, email: val.result[0].email, nombrecompleto: val.result[0].nombrecompleto, idlpempleado: val.result[0].idlpempleado })
+    console.log('Data changed:', val.data)
+    confStore.setToken(val.data.token)
+    confStore.setUser({ username: val.data.username, email: val.data.email, nombrecompleto: val.data.nombrecompleto, idlpempleado: val.data.idlpempleado })
   }
 })
 
@@ -70,11 +71,8 @@ onMounted(() => {
         class="flex flex-col text-center py-8 px-6 rounded-2xl w-full max-w-md shadow-lg backdrop-blur-md bg-[var(--p-surface-card)] transition-colors duration-300">
         <template #content>
           <div class="text-center mb-6">
-            <div class="flex items-center justify-center">
-              <Image :src="login" alt="Image" width="250" class="mx-auto mb-2 " />
-            </div>
-            <!-- <Avatar :image="avatar" class="mx-auto mb-2 " shape="circle" />
-            <div class="text-3xl font-semibold mb-2 text-[var(--p-text-color)]">Gente Util</div> -->
+            <Avatar :image="avatar" class="mx-auto mb-2 " shape="circle" />
+            <div class="text-3xl font-semibold mb-2 text-[var(--p-text-color)]">Gente Util</div>
             <!-- <span class="font-medium leading-6 text-[var(--p-text-secondary)]">Don't have an account?</span>
             <a class="font-medium no-underline ml-2 cursor-pointer text-[var(--p-primary-600)] hover:underline"
               @click="goRouteCreate()">Create today!</a> -->
@@ -97,8 +95,7 @@ onMounted(() => {
           </div>
 
           <div class="flex items-center justify-center gap-3 mb-4">
-            <Button type="button" label="Ingresar" class="w-full" :disabled="!validateForm"
-              @click="handleLogin(form)" />
+            <Button type="button" label="Sign In" class="w-full" :disabled="!validateForm" @click="handleLogin(form)" />
           </div>
 
           <!-- <div class="flex items-center justify-center gap-2 mb-2">

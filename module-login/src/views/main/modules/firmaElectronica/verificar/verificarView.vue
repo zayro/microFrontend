@@ -27,8 +27,10 @@ const confStore = useConfigStoreRef()
 
 const toast = useToast();
 
-const onFormSubmit = () => {
-  mutateVerificacion({ ...form })
+const onFormSubmit = async () => {
+  const ip = await fetchClientIp();
+  const identificacion = confStore.getUser.value.username;
+  mutateVerificacion({ ...form, ip, identificacion })
   console.log('Form submitted!', form);
 
 };
@@ -39,6 +41,14 @@ const form = reactive({
   code: ''
 
 });
+
+// función util
+async function fetchClientIp() {
+  const res = await fetch('https://api.ipify.org?format=json'); // CORS OK
+  if (!res.ok) throw new Error('No se pudo obtener IP');
+  const data = await res.json();
+  return data.ip; // string, p.e. '203.0.113.42'
+}
 
 
 const { mutate: mutateVerificacion, data, error, isPending, isError, isSuccess, isLoading } = useMutation({

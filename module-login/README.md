@@ -26,6 +26,7 @@ pnpm dev
 
 ```sh
 pnpm build
+pnpm run build --base=web/firmaDigital/
 ```
 
 ### Lint with [ESLint](https://eslint.org/)

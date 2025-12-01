@@ -15,17 +15,34 @@ import Toast from 'primevue/toast';
 import ProgressSpinner from 'primevue/progressspinner';
 
 
+import FileUpload from 'primevue/fileupload';
+
 import { ApiFirmaElectronica } from '@/api/apiFirmaElectronica'
 
 import { ApiInducciones } from '@/api/apiInducciones';
 
-// import { CONSTANT } from '@/env/index.js'
+import { CONSTANT } from '@/env/index.js'
 
 
+const SERVER = CONSTANT.URL.SERVER
 
 const confStore = useConfigStoreRef()
 
+const visible = ref(false);
+
 const router = useRouter();
+
+
+// 1. Declara el evento que puede emitir
+// Nota: usamos 'enviar-sidebar' para que coincida con el listener en el padre
+const emit = defineEmits(['enviar-sidebar']);
+
+function toggleSidebar() {
+  // 2. Emite el evento con los datos de la ruta
+  visible.value = true;
+  emit('enviar-sidebar', visible.value);
+}
+
 
 
 const formData = reactive({
@@ -40,18 +57,17 @@ const toast = useToast();
 const validateForm = computed(() => {
 
   const validar = formData.lista_consentimientos.every(item => item.checked);
-
-  return validar && validarArchivosDescargados()
+  console.log('validar', validar);
+  return validar
 })
 
-const { sendVerificationEmail, consultarDocumentos } = ApiFirmaElectronica()
+const { sendVerificationEmail, consultarDocumentos, validarRostro } = ApiFirmaElectronica()
 
 const { fetchInducciones, getFileInducciones } = ApiInducciones()
 
 const lista_documentos = ref([]);
 const lista_inducciones = ref([]);
-const validar_lista_inducciones = ref([]);
-
+const validacionRostro = ref(false);
 
 const resultDocumentos = useQuery({
   queryKey: ['consultarDocumentos', confStore.getUser.value.username],
@@ -83,16 +99,45 @@ lista_inducciones.value = (resultInducciones.data);
 
 
 
-const onFormSubmit = async () => {
+const fileupload = ref();
+
+const upload = async (event) => {
+  if (fileupload.value.files && fileupload.value.files[0]) {
+    try {
+      const file = fileupload.value.files[0];
+      const response = await validarRostro(file);
+      console.log('Validación de rostro:', response);
+      if (response.tiene_rostro) {
+        validacionRostro.value = true;
+        toast.add({ severity: 'success', summary: 'Éxito', detail: 'Rostro validado correctamente', life: 3000 });
+        fileupload.value.clear(); // Limpia el input después de un envío exitoso
+      } else {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'No se detectó un rostro en la imagen', life: 3000 });
+      }
+    } catch (error) {
+      console.error('Error al validar rostro:', error);
+      toast.add({ severity: 'error', summary: 'Error', detail: 'Error al validar el rostro', life: 3000 });
+    }
+  } else {
+    toast.add({ severity: 'warn', summary: 'Advertencia', detail: 'Por favor seleccione una imagen', life: 3000 });
+  }
+};
+
+const onUpload = () => {
+  toast.add({ severity: 'info', summary: 'Success', detail: 'File Uploaded', life: 3000 });
+};
+
+
+
+const onFormSubmit = () => {
 
   console.log('Form submitted!', formData);
 
   const todosLosCamposCompletos = formData.lista_consentimientos.every(item => item.checked);
 
-  if (todosLosCamposCompletos && validarArchivosDescargados()) {
-
+  if (todosLosCamposCompletos && validacionRostro.value) {
     toast.add({ severity: 'success', summary: 'Formulario enviado correctamente.', life: 3000 });
-    mutateSendEmail({ email: formData.email, identificacion: confStore.getUser.value.username });
+    mutateLogin({ ...formData })
     router.push({ name: 'verificarView' })
   } else {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Por favor, complete todos los campos.', life: 3000 });
@@ -107,46 +152,11 @@ const toggleConsentimiento = (index) => {
 
 };
 
-const { mutate: mutateSendEmail, data, error, isPending, isError, isSuccess, isLoading } = useMutation({
+const { mutate: mutateLogin, data, error, isPending, isError, isSuccess, isLoading } = useMutation({
   mutationFn: sendVerificationEmail,
 })
 
 
-function compararArrays(a, b) {
-  if (a.length !== b.length) return false;
-
-  const mapa = new Map();
-
-  for (let x of a) mapa.set(x, (mapa.get(x) || 0) + 1);
-  for (let x of b) {
-    if (!mapa.has(x)) return false;
-    mapa.set(x, mapa.get(x) - 1);
-  }
-
-  return [...mapa.values()].every(v => v === 0);
-}
-const validarArchivosDescargados = (archivo) => {
-  // Agregar archivo y limpiar nulos/vacíos
-  validar_lista_inducciones.value = [...validar_lista_inducciones.value, archivo]
-    .filter(x => x != null && x !== '');
-
-  console.log('Archivo descargado (filtrado):', validar_lista_inducciones.value);
-
-  // Obtener nombres de inducciones
-  const lista_inducciones_nombres = (lista_inducciones.value?._object?.data?.data || []).map(induccion => induccion.nombre);
-
-  // comparar con la lista de inducciones obtenida contra la lista de archivos descargados
-  const todosDescargados = compararArrays(validar_lista_inducciones.value, lista_inducciones_nombres);
-
-  console.log('Todos los archivos descargados:', todosDescargados);
-
-  if (todosDescargados) {
-    toast.add({ severity: 'success', summary: 'Éxito', detail: 'Todos los archivos han sido descargados.', life: 3000 });
-    return true;
-  } else {
-    return false;
-  }
-}
 
 watch(data, (val) => {
   if (val) {
@@ -176,8 +186,7 @@ onMounted(() => {
 })
 
 
-
-const URL_DOWNLOAD = "./pdf/inducciones/"
+const URL_DOWNLOAD = SERVER + '/v1/pdf/getFile?file_name='
 </script>
 
 <template>
@@ -202,12 +211,12 @@ const URL_DOWNLOAD = "./pdf/inducciones/"
 
                     <p class="text-justify">
 
-                      El (la) suscrito(a) declara que firma este documento de manera electrónica, conforme a lo
-                      establecido en la Ley 527 de 1999 y el Decreto 2364 de 2012, manifestando su consentimiento pleno,
-                      expreso e informado.
-                      La firma electrónica aquí utilizada identifica de manera inequívoca al firmante y refleja su
-                      voluntad de aceptar el contenido del presente documento, otorgándole plena validez
-                      jurídica y probatoria.</p>
+                      Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquam facilis
+                      fugiat corporis a sas
+                      ducimus quae reiciendis accusamus cumque modi tempore sapiente alias in, ipsum vitae, quaerat
+                      odio ad voluptatibus praesentium. Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                      Incidunt omnis corporis accusantium praesentium dolorum, nam maiores provident fugiat delectus
+                      reprehenderit ab deleniti hic totam repellendus ipsam sapiente, optio excepturi quidem!</p>
 
 
                     <div class="flex flex-col gap-2">
@@ -231,9 +240,18 @@ const URL_DOWNLOAD = "./pdf/inducciones/"
 
               <Divider />
 
+              <Fieldset legend="Validación de Rostro">
+                <div class="card flex flex-wrap gap-6 items-center justify-between">
+                  <FileUpload ref="fileupload" mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000"
+                    filelabel="Imagen de rostro" chooseLabel="Seleccionar Imagen" uploadLabel="Validar Rostro"
+                    @upload="onUpload" />
+                  <Button label="Cargar Imagen" @click="upload" severity="secondary" />
+                </div>
+              </Fieldset>
 
+              <Divider />
 
-              <Fieldset legend="Formato de inducciones">
+              <Fieldset legend="Inducciones Realizadas">
 
                 <div class="card flex justify-center">
                   <div class="gap-4">
@@ -241,11 +259,14 @@ const URL_DOWNLOAD = "./pdf/inducciones/"
                     <div class="card">
                       <div class=" flex  w-full  justify-between lg:flex-row sm:flex-col">
 
+
+
+
+
                         <div v-for="(induccion, index) in lista_inducciones.value?.data" :key="index"
                           class="p-2 md:p-4 lg:p-6">
                           <v-icon :name="'fa-file-pdf'" scale="1" :fill="'#800000'" />
-                          <a v-bind:href="URL_DOWNLOAD + induccion.nombre" download
-                            @click="validarArchivosDescargados(induccion.nombre)">{{ induccion.nombre }}</a>
+                          <a v-bind:href="URL_DOWNLOAD + induccion.nombre" download>{{ induccion.nombre }}</a>
                         </div>
                       </div>
                     </div>
@@ -261,7 +282,12 @@ const URL_DOWNLOAD = "./pdf/inducciones/"
 
                 <div class="card flex justify-center">
                   <div class="flex justify-center flex-col gap-4">
-
+                    <p class="text-left">Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquam facilis
+                      fugiat corporis a
+                      ducimus quae reiciendis accusamus cumque modi tempore sapiente alias in, ipsum vitae, quaerat
+                      odio ad voluptatibus praesentium. Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                      Incidunt omnis corporis accusantium praesentium dolorum, nam maiores provident fugiat delectus
+                      reprehenderit ab deleniti hic totam repellendus ipsam sapiente, optio excepturi quidem!</p>
                     <p>A continuación se relacionan los documentos que autorizo:</p>
 
                     <div class="card flex flex-wrap">

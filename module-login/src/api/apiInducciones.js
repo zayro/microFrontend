@@ -1,6 +1,6 @@
 import { CONSTANT } from '@/env/index.js'
 
-const URL = CONSTANT.URL.API
+const API_V1 = CONSTANT.URL.API_V1
 const API_V2 = CONSTANT.URL.API_V2
 const SERVER = CONSTANT.URL.SERVER
 
@@ -8,7 +8,7 @@ export function ApiInducciones() {
   // Ejemplo de postLogin en apiUser.js
   async function fetchInducciones(identificacion) {
     try {
-      const response = await fetch(SERVER + '/v2/general/search', {
+      const response = await fetch(API_V2 + '/general/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -32,7 +32,7 @@ export function ApiInducciones() {
 
   async function getFileInducciones(FILE) {
     try {
-      const response = await fetch(SERVER + '/v1/pdf/getFile?file_name=' + FILE, {
+      const response = await fetch(API_V1 + '/pdf/getFile?file_name=' + FILE, {
         method: 'GET',
         headers: { 'Content-Type': 'application/pdf' },
       })

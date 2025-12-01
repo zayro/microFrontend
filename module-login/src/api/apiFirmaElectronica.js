@@ -1,23 +1,23 @@
 import { CONSTANT } from '@/env/index.js'
 
-const URL = CONSTANT.URL.API
+const API_V1 = CONSTANT.URL.API_V1
 const API_V2 = CONSTANT.URL.API_V2
 const SERVER = CONSTANT.URL.SERVER
 
 export function ApiFirmaElectronica() {
   // Ejemplo de postLogin en apiUser.js
-  async function sendVerificationEmail({ email, subject }) {
+  async function sendVerificationEmail({ email, identificacion }) {
     // Nota: Los encabezados Access-Control-Allow-* no deben enviarse desde el cliente.
     // Deben ser devueltos por el servidor en la respuesta. Aquí enviamos sólo los
     // headers necesarios y, si se requieren cookies, habilitamos credentials.
     try {
-      const response = await fetch(URL + '/validacion_correo/send-verification-email', {
+      const response = await fetch(API_V1 + '/email/send-verification-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        body: JSON.stringify({ email, subject }),
+        body: JSON.stringify({ email, identificacion }),
       })
 
       if (!response.ok) {
@@ -32,23 +32,18 @@ export function ApiFirmaElectronica() {
     }
   }
 
-  async function verificationEmail({ email, code }) {
+  async function verificationEmail({ email, code, ip, identificacion }) {
     // Evitar cache en esta petición de verificación: usar cache: 'no-store'
     // y headers Cache-Control/Pragma. Mantener mode:'cors' y credentials
     // sólo si el servidor soporta Access-Control-Allow-Credentials.
     try {
-      const response = await fetch(URL + '/email/verify-email', {
+      const response = await fetch(API_V1 + '/email/verify-email', {
         method: 'POST',
-        mode: 'cors',
-        cache: 'no-store',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          Pragma: 'no-cache',
         },
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ email, code, ip, identificacion }),
       })
 
       if (!response.ok) {
@@ -65,11 +60,12 @@ export function ApiFirmaElectronica() {
 
   async function consultarDocumentos(identificacion) {
     // Aquí puedes usar fetch o axios
-    const response = await fetch(SERVER + '/v2/general/search', {
+    const response = await fetch(API_V2 + '/general/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true,
       body: JSON.stringify({
+        db_name: 'astgu',
         query: 'vista_contratos',
         fields: '*',
         where: { nroidentificacion: identificacion },
@@ -84,7 +80,7 @@ export function ApiFirmaElectronica() {
   async function validarRostro(file) {
     const formData = new FormData()
     formData.append('file', file)
-    const response = await fetch(URL + '/rostro/validar-rostro/', {
+    const response = await fetch(API_V1 + '/rostro/validar-rostro/', {
       method: 'POST',
       body: formData,
     })
