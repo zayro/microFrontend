@@ -1,35 +1,23 @@
-@import './base.css';
+/* main.css */
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+@import 'primeicons/primeicons.css';
+
+/* En tu archivo main.css o global */
+/* En tu archivo main.css o global */
+.my-app-dark {
+  --my-custom-bg: #18181b;
+  --my-custom-text: #f4f4f5;
+  /* Puedes sobreescribir variables de PrimeVue también */
+  --p-surface-500: #23272f;
+  --p-surface-700: #18181b;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+.my-app-light {
+  --my-custom-bg: #dbdbdb;
+  --my-custom-text: #18181b;
+  /* Puedes sobreescribir variables de PrimeVue también */
+  --p-surface-500: #ffffff;
+  --p-surface-700: #f4f4f5;
 }
