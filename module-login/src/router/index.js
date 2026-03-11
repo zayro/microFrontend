@@ -38,7 +38,7 @@ const router = createRouter({
       path: '/main',
       name: 'main',
       component: mainView,
-      meta: { transition: 'fade' },
+      meta: { label: 'Inicio', transition: 'fade' },
       children: [
         {
           // Ruta por defecto para /main/
@@ -52,18 +52,19 @@ const router = createRouter({
           path: '',
           name: 'mainWelcome',
           component: welcomeView,
-          meta: { transition: 'fade' },
+          meta: { label: 'Bienvenido', transition: 'fade' },
         },
         {
           path: '/theme',
           name: 'mainThemeView',
           component: themeView,
+          meta: { label: 'Tema', transition: 'fade' },
         },
         {
           path: '/firmaElectronica',
           name: 'firmaElectronica',
           component: firmaElectronicaView,
-          meta: { transition: 'fade' },
+          meta: { label: 'Documentos Firma Electrónica', transition: 'fade' },
           children: [
             {
               path: '/',

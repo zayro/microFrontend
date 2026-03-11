@@ -6,23 +6,45 @@
         <span class="yellow"></span>
         <span class="green"></span>
       </div>
-      <div>
-        <Button label="Primary" variant="text" raised @click="visible = true">
+
+      <!--         <Button label="Primary" variant="text" raised @click="visible = true">
           <span class="pi pi-fw pi-bars" />
-
         </Button>
+ -->
 
 
-      </div>
+
+      <Breadcrumb :home="home" :model="itemsBreadcrumb">
+        <template #item="{ item, props }">
+          <router-link v-if="item.route" v-slot="{ href, navigate }" :to="item.route" custom>
+            <a :href="href" v-bind="props.action" @click="navigate">
+              <span :class="[item.icon, 'text-color']" />
+              <span class="text-primary font-semibold">{{ item.label }}</span>
+            </a>
+          </router-link>
+          <a v-else :href="item.url" :target="item.target" v-bind="props.action">
+            <span class="text-surface-700 dark:text-surface-0">{{ item.label }}</span>
+          </a>
+        </template>
+      </Breadcrumb>
+
+
 
     </template>
     <template #end>
 
-      <span><strong>{{ confStore.getUser.value.nombrecompleto }}</strong></span>
 
-      <i class="pi pi-wifi px-2" />
-      <i class="pi pi-volume-up px-2" />
-      <span class="px-2">{{ currentTime }}</span>
+      <Button :label="confStore.getUser.value.nombrecompleto" variant="text" />
+
+
+      <!-- <Button icon="pi pi-wifi" variant="text" severity="success" rounded aria-label="Wifi" /> -->
+
+
+      <Button icon="pi pi-power-off" variant="text" severity="danger" rounded aria-label="Power Off"
+        @click="closeSession" />
+
+      <Button :label="currentTime" severity="secondary" variant="text" />
+
     </template>
   </Menubar>
 
@@ -59,9 +81,14 @@ import { useConfigStoreRef } from '@/stores/config'
 import Button from 'primevue/button';
 import Sidebar from 'primevue/sidebar';
 import Menu from 'primevue/menu';
+import Breadcrumb from 'primevue/breadcrumb';
 
 import { useRouter } from 'vue-router';
 
+const home = ref({
+  icon: 'pi pi-home',
+  route: '/main'
+});
 const router = useRouter();
 
 const items = ref([
@@ -83,6 +110,15 @@ const items = ref([
     url: 'https://vuejs.org/'
   }
 ]);
+
+const closeSession = () => {
+  console.log('Cerrar sesión')
+  sessionStorage.clear() // Limpia el almacenamiento de sesión
+  localStorage.clear() // Limpia el almacenamiento local
+
+  // Aquí puedes agregar la lógica para cerrar sesión, como limpiar tokens, redirigir, etc.
+  router.push('/') // Redirige al login después de cerrar sesión
+}
 
 const confStore = useConfigStoreRef()
 
@@ -114,7 +150,10 @@ const props = defineProps({
     type: String,
     default: 'Bienvenido'
   },
-
+  itemsBreadcrumb: {
+    type: Array,
+    default: () => []
+  }
 })
 </script>
 
