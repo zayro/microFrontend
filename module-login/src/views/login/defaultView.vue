@@ -37,7 +37,7 @@ watch(data, (val) => {
   if (val) {
     console.log('Data changed:', val)
     confStore.setToken(val.token)
-    confStore.setUser({ username: val.result[0].nroidentificacion, email: val.result[0].email, nombrecompleto: val.result[0].nombrecompleto, idlpempleado: val.result[0].idlpempleado })
+    confStore.setUser({ username: val.result[0].nroidentificacion, email: val.result[0].email, nombrecompleto: val.result[0].nombrecompleto ?? val.result[0].email })
   }
 })
 

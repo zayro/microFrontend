@@ -30,7 +30,9 @@ const toast = useToast();
 const onFormSubmit = async () => {
   const ip = await fetchClientIp();
   const identificacion = confStore.getUser.value.username;
-  mutateVerificacion({ ...form, ip, identificacion })
+  //const token = confStore.getToken;
+  const code = confStore.getCode;
+  mutateVerificacion({ ...form, ip: ip, identificacion: identificacion, token: code })
   console.log('Form submitted!', form);
 
 };

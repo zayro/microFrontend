@@ -43,6 +43,7 @@ export const useConfigStoreRef = defineStore('conf', {
     getMenu: (state) => state?.conf?.menu || {},
     getInformation: (state) => state?.conf?.information || {},
     getToken: (state) => state?.token || null,
+    getCode: (state) => state?.user?.code || null,
     getUser: (state) => state?.user || {},
     getAuthor: (state) => state?.author,
   },
@@ -53,6 +54,9 @@ export const useConfigStoreRef = defineStore('conf', {
     },
     setToken(value) {
       this.token = value
+    },
+    setCode(value) {
+      this.user.code = value
     },
     setUser(value) {
       this.user = { ...this.user, value }

@@ -107,8 +107,19 @@ const toggleConsentimiento = (index) => {
 
 };
 
+// store response explicitly
+const sendEmailResponse = ref(null);
+
 const { mutate: mutateSendEmail, data, error, isPending, isError, isSuccess, isLoading } = useMutation({
   mutationFn: sendVerificationEmail,
+  onSuccess: (response) => {
+    console.log('sendVerificationEmail onSuccess:', response);
+    sendEmailResponse.value = response;
+    confStore.setCode(response.code)
+  },
+  onError: (err) => {
+    console.error('sendVerificationEmail failed:', err);
+  }
 })
 
 
@@ -125,6 +136,7 @@ function compararArrays(a, b) {
 
   return [...mapa.values()].every(v => v === 0);
 }
+
 const validarArchivosDescargados = (archivo) => {
   // Agregar archivo y limpiar nulos/vacíos
   validar_lista_inducciones.value = [...validar_lista_inducciones.value, archivo]

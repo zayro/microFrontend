@@ -32,7 +32,7 @@ export function ApiFirmaElectronica() {
     }
   }
 
-  async function verificationEmail({ email, code, ip, identificacion }) {
+  async function verificationEmail({ email, code, ip, identificacion, token }) {
     // Evitar cache en esta petición de verificación: usar cache: 'no-store'
     // y headers Cache-Control/Pragma. Mantener mode:'cors' y credentials
     // sólo si el servidor soporta Access-Control-Allow-Credentials.
@@ -43,7 +43,7 @@ export function ApiFirmaElectronica() {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        body: JSON.stringify({ email, code, ip, identificacion }),
+        body: JSON.stringify({ email, code, ip, identificacion, token }),
       })
 
       if (!response.ok) {

@@ -7,21 +7,36 @@
         <span class="green"></span>
       </div>
       <div>
-        <Button label="Primary" variant="text" raised @click="visible = true">
+        <!--         <Button label="Primary" variant="text" raised @click="visible = true">
           <span class="pi pi-fw pi-bars" />
+        </Button> -->
 
-        </Button>
 
+        <Breadcrumb :home="home" :model="itemsBreadCrumb">
+          <template #item="{ item, props }">
+            <router-link v-if="item.route" v-slot="{ href, navigate }" :to="item.route" custom>
+              <a :href="href" v-bind="props.action" @click="navigate">
+                <span :class="[item.icon, 'text-color']" />
+                <span class="text-primary font-semibold">{{ item.label }}</span>
+              </a>
+            </router-link>
+            <a v-else :href="item.url" :target="item.target" v-bind="props.action">
+              <span class="text-surface-700 dark:text-surface-0">{{ item.label }}</span>
+            </a>
+          </template>
+        </Breadcrumb>
 
       </div>
 
     </template>
     <template #end>
 
-      <span><strong>{{ confStore.getUser.value.nombrecompleto }}</strong></span>
+      <Button :label="confStore.getUser.value.nombrecompleto" variant="text" />
 
-      <i class="pi pi-wifi px-2" />
-      <i class="pi pi-volume-up px-2" />
+      <!-- <i class="pi pi-wifi px-2" />
+      <i class="pi pi-volume-up px-2" /> -->
+      <Button icon="pi pi-power-off" variant="text" severity="danger" rounded aria-label="Power"
+        @click="closeSession" />
       <span class="px-2">{{ currentTime }}</span>
     </template>
   </Menubar>
@@ -59,10 +74,24 @@ import { useConfigStoreRef } from '@/stores/config'
 import Button from 'primevue/button';
 import Sidebar from 'primevue/sidebar';
 import Menu from 'primevue/menu';
+import Breadcrumb from 'primevue/breadcrumb';
 
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
+
+const home = ref({
+  icon: 'pi pi-home',
+  route: '/main'
+});
+
+const closeSession = () => {
+  console.log('Cerrar sesión')
+  // Aquí puedes agregar la lógica para cerrar sesión, como limpiar tokens, redirigir, etc.
+  sessionStorage.clear() // Ejemplo: limpiar el almacenamiento de sesión
+  localStorage.clear() // Ejemplo: limpiar el almacenamiento local
+  router.push('/') // Redirigir al login después de cerrar sesión
+}
 
 const items = ref([
   {
@@ -114,6 +143,12 @@ const props = defineProps({
     type: String,
     default: 'Bienvenido'
   },
+  itemsBreadCrumb: {
+    type: Array,
+    default: () => [
+      { label: 'Home', route: '/main' }
+    ]
+  }
 
 })
 </script>

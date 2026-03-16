@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useConfigStoreRef } from '@/stores/config'
 
 import DefaultView from '../views/login/defaultView.vue'
 import themeView from '@/views/theme/themeView.vue'
@@ -14,6 +15,9 @@ import firmaElectronicaView from '@/views/main/modules/firmaElectronica/firmaEle
 import politicasView from '@/views/main/modules/firmaElectronica/politicas/politicasView.vue'
 import verificarView from '@/views/main/modules/firmaElectronica/verificar/verificarView.vue'
 
+// Rutas públicas que no requieren autenticación
+const PUBLIC_ROUTES = ['defaultView', 'liquidView', 'themeView']
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -26,11 +30,13 @@ const router = createRouter({
       path: '/',
       name: 'defaultView',
       component: DefaultView,
+      meta: { requiresAuth: false, label: 'Login' },
     },
     {
       path: '/theme',
       name: 'themeView',
       component: themeView,
+      meta: { requiresAuth: false, label: 'Tema' },
     },
 
     // Modulos
@@ -38,7 +44,7 @@ const router = createRouter({
       path: '/main',
       name: 'main',
       component: mainView,
-      meta: { transition: 'fade' },
+      meta: { requiresAuth: true, transition: 'fade', label: 'Principal' },
       children: [
         {
           // Ruta por defecto para /main/
@@ -63,25 +69,25 @@ const router = createRouter({
           path: '/firmaElectronica',
           name: 'firmaElectronica',
           component: firmaElectronicaView,
-          meta: { transition: 'fade' },
+          meta: { label: 'Firma Electrónica', transition: 'fade' },
           children: [
             {
               path: '/',
               name: 'politicasView',
               component: politicasView,
-              meta: { transition: 'fade' },
+              meta: { label: 'Políticas', transition: 'fade' },
             },
             {
               path: '',
               name: 'politicasView',
               component: politicasView,
-              meta: { transition: 'fade' },
+              meta: { label: 'Políticas', transition: 'fade' },
             },
             {
               path: 'verificarFirma',
               name: 'verificarView',
               component: verificarView,
-              meta: { transition: 'fade' },
+              meta: { label: 'Verificar Firma', transition: 'fade' },
             },
           ],
         },
@@ -91,13 +97,35 @@ const router = createRouter({
       path: '/welcome',
       name: 'welcomeView',
       component: welcomeView,
+      meta: { requiresAuth: false, label: 'Bienvenida' },
     },
     {
       path: '/liquid/',
       name: 'liquidView',
       component: liquidView,
+      meta: { requiresAuth: false, label: 'Liquid' },
     },
   ],
+})
+
+// Guard global para validar autenticación
+router.beforeEach((to, from, next) => {
+  const configStore = useConfigStoreRef()
+  const isAuthenticated = !!configStore.getToken
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+
+  // Si la ruta requiere autenticación y no está autenticado
+  if (requiresAuth && !isAuthenticated) {
+    console.warn(`Acceso denegado a ${to.path}: Autenticación requerida`)
+    return next({ name: 'defaultView' })
+  }
+
+  // Si está autenticado y trata de ir a login, déjalo pasar
+  if (isAuthenticated && to.name === 'defaultView') {
+    return next()
+  }
+
+  next()
 })
 
 export default router
