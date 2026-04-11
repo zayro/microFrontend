@@ -1,27 +1,36 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
 import HvView from '../views/HvView.vue'
+
+// Pagina de Error 404
+import NotFoundView from '@/views/404/404.vue'
+
+import DefaultView from '@/views/login/defaultView.vue'
+
+import createUserView from '@/views/register/createUserView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/:catchAll(.*)',
+      name: 'NotFound',
+      component: NotFoundView,
+    },
+    {
       path: '/',
-      name: 'home',
-      component: HvView,
+      name: 'defaultView',
+      component: DefaultView,
+      meta: { requiresAuth: false, label: 'Login' },
+    },
+    {
+      path: '/createUser',
+      name: 'createUserView',
+      component: createUserView,
     },
     {
       path: '/hv',
       name: 'hv',
       component: HvView,
-    },
-    {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
     },
   ],
 })
