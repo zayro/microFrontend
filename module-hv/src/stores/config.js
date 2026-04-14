@@ -4,7 +4,7 @@ import { defineStore } from 'pinia'
  * Conf User
  */
 
-const SETTINGS_LOCAL_STORAGE_KEY_CONF = 'conf'
+const SETTINGS_LOCAL_STORAGE_KEY_CONF = 'conf_hv'
 
 const settings_conf = localStorage.getItem(SETTINGS_LOCAL_STORAGE_KEY_CONF)
 
@@ -17,7 +17,7 @@ const ConfDefault = settings_conf
       user: {},
     }
 
-export const useConfigStoreRef = defineStore('conf', {
+export const useConfigStoreRef = defineStore('conf_hv', {
   state: () => ({
     conf: ConfDefault.conf,
     author: ConfDefault.author,
@@ -62,7 +62,7 @@ export const useConfigStoreRef = defineStore('conf', {
  * Conf App
  */
 
-const SETTINGS_LOCAL_STORAGE_KEY = 'app'
+const SETTINGS_LOCAL_STORAGE_KEY = 'app_hv'
 
 const settings = localStorage.getItem(SETTINGS_LOCAL_STORAGE_KEY)
 

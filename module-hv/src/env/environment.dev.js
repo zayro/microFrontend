@@ -1,6 +1,6 @@
 // Ejemplo: leer VITE_TARGET (prefijo VITE_ recomendado para variables cliente)
-const URLTARGET =
-  import.meta.env.VITE_TARGET || import.meta.env.VITE_API_URL || 'http://localhost:4000'
+// const URLTARGET = 'https://app2.genteutil.net/web/firmaDigitalBack/public'
+const URLTARGET = 'http://localhost:3000'
 
 export const CONSTANT = Object.freeze({
   URL: {

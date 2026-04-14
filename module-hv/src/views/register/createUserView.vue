@@ -75,8 +75,10 @@ const goRouteLogin = () => {
 }
 
 const create = (values) => {
+  console.log(':rocket: ~ create ~ values', values)
+  const payload = { identificacion: username.value, email: email.value, password: password.value }
   http
-    .post('user/new', values)
+    .post('auth/register', payload)
     .then((response) => {
       console.log(':rocket: ~ .then ~ response', response.data)
       swal('Recovery Pass!', 'Su cuenta se ha creado!', 'success')
@@ -85,7 +87,7 @@ const create = (values) => {
     })
     .catch((error) => {
       console.log(error)
-      swal('Wrong!', 'You clicked the button!', 'error')
+      swal('Wrong!', 'Sucedio Error al Crear Usuario!', 'error')
     })
 }
 

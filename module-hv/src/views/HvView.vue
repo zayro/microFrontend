@@ -1,5 +1,6 @@
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
+
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
@@ -15,6 +16,12 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputMask from 'primevue/inputmask'
 import Image from 'primevue/image'
+
+import { useConfigStoreRef } from '@/stores/config'
+
+import { http } from '@/services/http-axios'
+
+import swal from 'sweetalert'
 
 import login from '@/assets/img/login/logo_gu.png'
 
@@ -35,6 +42,10 @@ import {
   lista_modalidad_estudio,
 } from '@/services/dataList'
 
+const configStore = useConfigStoreRef()
+
+const user = configStore.getUser
+
 const visible_datos_personales = ref(false)
 const visible_experiencia = ref(false)
 const dialogIndex = ref(null)
@@ -52,7 +63,7 @@ const defaultFormData = {
     primer_apellido: '',
     segundo_apellido: '',
     tipo_documento: null,
-    numero_documento: '',
+    numero_documento: user.value.username,
     ciudad_documento_expedicion: '',
     fecha_documento_expedicion: '',
     pais_residencia: '',
@@ -221,6 +232,7 @@ const errors = reactive({
       fecha_desde_reconocimiento: '',
       fecha_hasta_reconocimiento: '',
       familia_considerada_pep_sn: '',
+      familia_considerada_pep_cantidad_persona: 0,
       familia_considerada_pep_persona: [],
     },
   },
@@ -382,33 +394,25 @@ async function onSubmit() {
     submitted.value = true
 
     try {
+      if (form.datos_personales.fecha_documento_expedicion) {
+        form.datos_personales.fecha_documento_expedicion = formatDate(form.datos_personales.fecha_documento_expedicion)
+      }
+
       const payload = {
         identificacion: form.datos_personales.numero_documento,
         informacion: form,
       }
 
-      console.log(payload)
-      // Petición POST para enviar la información del formulario
-      const response = await fetch('http://localhost:3000/records/save', {
-        // Cambiar por tu URL de destino
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log('Respuesta exitosa:', data)
-        // Ocultar mensaje de éxito después de 3 segundos
-        setTimeout(() => {
-          submitted.value = false
-        }, 3000)
-      } else {
-        console.error('Ocurrió un error al enviar el formulario:', response.statusText)
-        submitted.value = false
-      }
+      http('http://localhost:3000/')
+        .post('records/save', payload)
+        .then((response) => {
+          console.log(':rocket: ~ .then ~ response', response.data)
+          swal('Recovery Pass!', 'Se ha actualizado el registro!', 'success')
+        })
+        .catch((error) => {
+          console.log(error)
+          swal('Wrong!', 'Sucedio Error al Crear Usuario!', 'error')
+        })
     } catch (error) {
       console.error('Error en la llamada de red:', error)
       submitted.value = false
@@ -480,6 +484,7 @@ const createPepData = (number) => {
   PepService.getCreateData(number).then((data) => (data_pep_familiar.value = data))
 }
 
+/*
 onMounted(() => {
   ProductService.getProductsMini().then((data) => {
     data_entidad_financiera.value = data
@@ -489,6 +494,7 @@ onMounted(() => {
     }
   })
 })
+  */
 
 // Watcher para sincronizar cambios en data_entidad_financiera con el formulario
 watch(
@@ -522,6 +528,29 @@ onMounted(() => {
   document.title = 'Hoja de Vida'
   document.documentElement.style.setProperty('--animate-duration', '.9s')
   //document.body.style.background = `url(${imgBodyBackGround})`
+
+  if (user.value && user.value.username) {
+    http('http://localhost:3000/records')
+      .get(`buscar/${user.value.username}`)
+      .then((response) => {
+        if (response.data) {
+          console.log('Registro encontrado, cargando datos...')
+          // Se asume que los datos vienen en response.data.informacion o directamente en response.data
+          Object.assign(form, response.data[0].informacion || response.data)
+
+          data_entidad_financiera.value = [
+            ...response.data[0].informacion.sagrilaft.operaciones_internacionales.productos_financieros,
+          ]
+
+          data_pep_familiar.value = [
+            ...response.data[0].informacion.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_persona,
+          ]
+        }
+      })
+      .catch((error) => {
+        console.log('No se encontraron registros previos o hubo un error:', error)
+      })
+  }
 })
 </script>
 
@@ -532,11 +561,9 @@ onMounted(() => {
         <Panel class="p-panel-noborder">
           <template #header>
             <div class="flex flex-col items-center justify-center w-full gap-2">
-              <strong class="font-bold text-shadow-sm uppercase font-mono"
-                >Instrucciones Inscripción Hoja de Vida</strong
-              >
-
-              <Image :src="login" alt="Image" width="250" class="mx-auto mb-2" />
+              <span class="font-bold text-shadow-sm uppercase font-mono">Instrucciones Inscripción Hoja de Vida </span>
+              <Image :src="login" alt="Image" width="150" class="mx-auto mb-2" />
+              <strong>Usuario {{ user.value.username }}</strong>
             </div>
           </template>
 
@@ -816,6 +843,7 @@ onMounted(() => {
     v-model:visible="visible_datos_personales"
     modal
     header="Editar Informacion Personal"
+    :data="form.datos_personales"
     :style="{ width: '75rem' }"
   >
     <Panel header="Datos Personales" class="p-panel-noborder">
@@ -967,11 +995,10 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
+                <InputText
                   v-model="form.datos_personales.ciudad_residencia"
-                  :options="lista_ciudades"
-                  optionLabel="label"
+                  id="ciudad_residencia"
+                  size="small"
                   :class="{ 'p-invalid': errors.datos_personales.ciudad_residencia }"
                   fluid
                 />
@@ -1008,7 +1035,7 @@ onMounted(() => {
                   fluid
                 />
               </IconField>
-              <label for="numero_documento">Tipo Documento</label>
+              <label for="tipo_documento">Tipo Documento</label>
             </FloatLabel>
           </div>
 
@@ -1021,6 +1048,7 @@ onMounted(() => {
                   id="numero_documento"
                   size="small"
                   :class="{ 'p-invalid': errors.datos_personales.numero_documento }"
+                  readonly
                   fluid
                 />
               </IconField>
@@ -1034,6 +1062,7 @@ onMounted(() => {
                 <DatePicker
                   v-model="form.datos_personales.fecha_documento_expedicion"
                   :class="{ 'p-invalid': errors.datos_personales.fecha_expedicion }"
+                  dateFormat="yy-mm-dd"
                   showIcon
                   fluid
                 />
@@ -2064,7 +2093,7 @@ onMounted(() => {
             <FloatLabel variant="in">
               <IconField>
                 <InputNumber
-                  v-model="cantidad_familia_pep"
+                  v-model="form.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_cantidad_persona"
                   inputId="familia_considerada_pep_sn"
                   :min="1"
                   :max="5"
@@ -2072,7 +2101,11 @@ onMounted(() => {
                   buttonLayout="horizontal"
                   :step="1"
                   fluid
-                  @input="createPepData(cantidad_familia_pep)"
+                  @input="
+                    createPepData(
+                      form.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_cantidad_persona,
+                    )
+                  "
                 >
                   <template #incrementbuttonicon>
                     <span class="pi pi-plus" />

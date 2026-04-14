@@ -7,17 +7,19 @@ const TOKEN = window.localStorage.getItem('accessToken')
   ? JSON.parse(window.localStorage.getItem('accessToken')).token
   : null
 
-const http = axios.create({
-  baseURL: URL,
-  headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-    Authorization: `Bearer ${TOKEN}`
-  },
-  responseType: 'json', // defecto
-  responseEncoding: 'utf8', // defecto
-  withCredentials: false
-})
+const http = (url_value = URL) => {
+  return axios.create({
+    baseURL: url_value,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${TOKEN}`,
+    },
+    responseType: 'json', // defecto
+    responseEncoding: 'utf8', // defecto
+    withCredentials: false,
+  })
+}
 
 const data = new FormData()
 
@@ -25,22 +27,22 @@ const httpFormData = axios.create({
   baseURL: URL,
   headers: {
     'Content-Type': `multipart/form-data; boundary=${data._boundary}`,
-    Authorization: `Bearer ${TOKEN}`
+    Authorization: `Bearer ${TOKEN}`,
   },
-  responseType: 'json' // defecto
+  responseType: 'json', // defecto
 })
 
 const httpDownload = axios.create({
   baseURL: URL,
   headers: {
     'Content-Type': 'multipart/form-data;',
-    Authorization: `Bearer ${TOKEN}`
+    Authorization: `Bearer ${TOKEN}`,
   },
   responseType: 'blob',
-  timeout: 30000
+  timeout: 30000,
 })
 
-http.interceptors.response.use(
+http().interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.code === 'ERR_NETWORK') {
@@ -60,7 +62,7 @@ http.interceptors.response.use(
       throw new Error(`${err.config.url} server`)
     }
     return Promise.reject(err)
-  }
+  },
 )
 
 // Add a request interceptor

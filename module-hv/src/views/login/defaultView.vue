@@ -12,8 +12,6 @@ import Button from 'primevue/button'
 import Image from 'primevue/image'
 import { ApiUser } from '@/api/apiUser'
 
-import imgBodyBackGround from '@/assets/img/background/pattern5_black.png'
-
 import login from '@/assets/img/login/logo_gu.png'
 
 const form = reactive({ username: '', password: '' })
@@ -49,9 +47,9 @@ watch(data, (val) => {
     console.log('Data changed:', val)
     confStore.setToken(val.token)
     confStore.setUser({
-      username: val.result[0].nroidentificacion,
-      email: val.result[0].email,
-      nombrecompleto: val.result[0].nombrecompleto ?? val.result[0].email,
+      username: val.username,
+      identificacion: val.identificacion,
+      email: val.email,
     })
   }
 })
@@ -59,7 +57,7 @@ watch(data, (val) => {
 watch(isSuccess, (val) => {
   if (val) {
     toast.add({ severity: 'success', summary: 'Éxito', detail: '¡Ingreso exitoso!', life: 3000 })
-    router.push({ name: 'mainWelcome' })
+    router.push({ name: 'hv' })
   }
 })
 
