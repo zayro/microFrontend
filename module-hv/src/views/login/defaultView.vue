@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, onMounted, watch } from 'vue'
+import { computed, reactive, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useConfigStoreRef } from '@/stores/config'
 import { useMutation } from '@tanstack/vue-query'
@@ -18,6 +18,19 @@ const form = reactive({ username: '', password: '' })
 const confStore = useConfigStoreRef()
 const router = useRouter()
 const toast = useToast()
+
+const showSessionPrompt = ref(false)
+const currentUser = computed(() => confStore.getUser?.value?.username || confStore.getUser?.username || '')
+
+const continueSession = () => {
+  router.push({ name: 'hv' })
+}
+
+const closeSession = () => {
+  confStore.resetAll()
+  confStore.setUser({})
+  showSessionPrompt.value = false
+}
 
 const validateForm = computed(() => form.username !== '' && form.password !== '')
 const { postLoginMb } = ApiUser()
@@ -78,6 +91,10 @@ onMounted(() => {
   document.title = 'Login'
   document.documentElement.style.setProperty('--animate-duration', '.9s')
   //document.body.style.background = `url(${imgBodyBackGround})`
+
+  if (confStore.getToken) {
+    showSessionPrompt.value = true
+  }
 })
 </script>
 
@@ -88,71 +105,97 @@ onMounted(() => {
         class="flex flex-col text-center py-8 px-6 rounded-2xl w-full max-w-md shadow-lg backdrop-blur-md bg-[var(--p-surface-card)] transition-colors duration-300"
       >
         <template #content>
-          <div class="text-center mb-6">
-            <div class="flex items-center justify-center">
-              <Image :src="login" alt="Image" width="250" class="mx-auto mb-2" />
+          <div v-if="showSessionPrompt">
+            <div class="text-center mb-6">
+              <div class="flex items-center justify-center">
+                <Image :src="login" alt="Image" width="250" class="mx-auto mb-2" />
+              </div>
+              <h2 class="text-xl font-semibold mb-2 text-[var(--p-text-color)]">Hola, {{ currentUser }}</h2>
+              <p class="mb-5 text-gray-500">
+                Detectamos una sesión activa. ¿Deseas continuar en ella o cerrar tu sesión actual?
+              </p>
+
+              <div class="flex flex-col gap-3">
+                <Button label="Continuar en sesión" icon="pi pi-arrow-right" class="w-full" @click="continueSession" />
+                <Button
+                  label="Cerrar sesión"
+                  icon="pi pi-sign-out"
+                  severity="secondary"
+                  outlined
+                  class="w-full"
+                  @click="closeSession"
+                />
+              </div>
             </div>
-            <!-- <Avatar :image="avatar" class="mx-auto mb-2 " shape="circle" />
-            <div class="text-3xl font-semibold mb-2 text-[var(--p-text-color)]">Gente Util</div> -->
-            <!-- <span class="font-medium leading-6 text-[var(--p-text-secondary)]">Don't have an account?</span>
-            <a class="font-medium no-underline ml-2 cursor-pointer text-[var(--p-primary-600)] hover:underline"
-              @click="goRouteCreate()">Create today!</a> -->
           </div>
 
-          <div class="flex items-center justify-center gap-3 mb-4">
-            <IconField icon-position="left" class="w-full">
-              <InputIcon id="username" class="pi pi-user" />
-              <InputText
-                v-model.trim="form.username"
-                type="text"
-                class="flex-auto w-full"
-                placeholder="Username"
-                variant="filled"
+          <div v-else>
+            <div class="text-center mb-6">
+              <div class="flex items-center justify-center">
+                <Image :src="login" alt="Image" width="250" class="mx-auto mb-2" />
+              </div>
+              <!-- <Avatar :image="avatar" class="mx-auto mb-2 " shape="circle" />
+              <div class="text-3xl font-semibold mb-2 text-[var(--p-text-color)]">Gente Util</div> -->
+              <!-- <span class="font-medium leading-6 text-[var(--p-text-secondary)]">Don't have an account?</span>
+              <a class="font-medium no-underline ml-2 cursor-pointer text-[var(--p-primary-600)] hover:underline"
+                @click="goRouteCreate()">Create today!</a> -->
+            </div>
+
+            <div class="flex items-center justify-center gap-3 mb-4">
+              <IconField icon-position="left" class="w-full">
+                <InputIcon id="username" class="pi pi-user" />
+                <InputText
+                  v-model.trim="form.username"
+                  type="text"
+                  class="flex-auto w-full"
+                  placeholder="Username"
+                  variant="filled"
+                />
+              </IconField>
+            </div>
+
+            <div class="flex items-center justify-center gap-3 mb-4">
+              <IconField icon-position="left" class="w-full">
+                <InputIcon class="pi pi-lock" />
+                <InputText
+                  v-model.trim="form.password"
+                  type="password"
+                  class="flex-auto w-full"
+                  placeholder="Password"
+                  variant="filled"
+                />
+              </IconField>
+            </div>
+
+            <div class="flex items-center justify-center gap-3 mb-4">
+              <Button
+                type="button"
+                label="Ingresar"
+                class="w-full"
+                :disabled="!validateForm"
+                @click="handleLogin(form)"
               />
-            </IconField>
-          </div>
+            </div>
 
-          <div class="flex items-center justify-center gap-3 mb-4">
-            <IconField icon-position="left" class="w-full">
-              <InputIcon class="pi pi-lock" />
-              <InputText
-                v-model.trim="form.password"
-                type="password"
-                class="flex-auto w-full"
-                placeholder="Password"
-                variant="filled"
-              />
-            </IconField>
-          </div>
+            <div class="text-center mb-5">
+              <span class="font-medium text-600">
+                Crear un usuario si no tienes cuenta de acceso
+                <a class="font-medium no-underline ml-2 text-blue-500 cursor-pointer" @click="goRouteCreate()"
+                  >Click Aqui</a
+                >
+              </span>
+            </div>
 
-          <div class="flex items-center justify-center gap-3 mb-4">
-            <Button
-              type="button"
-              label="Ingresar"
-              class="w-full"
-              :disabled="!validateForm"
-              @click="handleLogin(form)"
-            />
+            <!-- <div class="flex items-center justify-center gap-2 mb-2">
+              <span class="font-medium text-[var(--p-text-secondary)]">
+                Did you forget your
+                <a class="font-semibold cursor-pointer hover:text-[var(--p-primary-500)] transition-colors duration-300"
+                  @click="goRouteRecovery()">
+                  password?
+                </a>
+              </span>
+            </div> -->
           </div>
-
-          <div class="text-center mb-5">
-            <span class="font-medium text-600">
-              Crear un usuario si no tienes cuenta de acceso
-              <a class="font-medium no-underline ml-2 text-blue-500 cursor-pointer" @click="goRouteCreate()"
-                >Click Aqui</a
-              >
-            </span>
-          </div>
-
-          <!-- <div class="flex items-center justify-center gap-2 mb-2">
-            <span class="font-medium text-[var(--p-text-secondary)]">
-              Did you forget your
-              <a class="font-semibold cursor-pointer hover:text-[var(--p-primary-500)] transition-colors duration-300"
-                @click="goRouteRecovery()">
-                password?
-              </a>
-            </span>
-          </div> -->
         </template>
       </Card>
     </div>

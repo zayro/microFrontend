@@ -54,8 +54,6 @@ const visible_educacion = ref(false)
 const visible_sagrilaft = ref(false)
 const visible_errores = ref(false)
 
-const cantidad_familia_pep = ref(0)
-
 const defaultFormData = {
   datos_personales: {
     primer_nombre: '',
@@ -63,13 +61,13 @@ const defaultFormData = {
     primer_apellido: '',
     segundo_apellido: '',
     tipo_documento: null,
-    numero_documento: user.value.username,
+    numero_documento: user.value.identificacion,
     ciudad_documento_expedicion: '',
     fecha_documento_expedicion: '',
     pais_residencia: '',
     ciudad_residencia: '',
     direccion_residencia: '',
-    correo_electronico: '',
+    correo_electronico: user.value.email,
     telefono: '',
     genero: '',
     genero_identitario_sn: '',
@@ -245,21 +243,11 @@ const errorList = ref([])
 const validate = () => {
   errorList.value = []
   errors.datos_personales.primer_nombre = form.datos_personales.primer_nombre ? '' : 'El primer nombre es obligatorio.'
-  errors.datos_personales.segundo_nombre = form.datos_personales.segundo_nombre
-    ? ''
-    : 'El segundo nombre es obligatorio.'
+
   errors.datos_personales.primer_apellido = form.datos_personales.primer_apellido
     ? ''
     : 'El primer apellido es obligatorio.'
-  errors.datos_personales.segundo_apellido = form.datos_personales.segundo_apellido
-    ? ''
-    : 'El segundo apellido es obligatorio.'
 
-  errors.datos_personales.correo_electronico = form.datos_personales.correo_electronico
-    ? /^\S+@\S+\.\S+$/.test(form.datos_personales.correo_electronico)
-      ? ''
-      : 'Correo inválido.'
-    : 'El correo es obligatorio.'
   // Validar teléfono: debe tener formato 999-9999999 o solo dígitos, longitud 7-15
   if (!form.datos_personales.telefono) {
     errors.datos_personales.telefono = 'El teléfono es obligatorio.'
@@ -398,12 +386,34 @@ async function onSubmit() {
         form.datos_personales.fecha_documento_expedicion = formatDate(form.datos_personales.fecha_documento_expedicion)
       }
 
+      if (form.datos_personales.fecha_nacimiento) {
+        form.datos_personales.fecha_nacimiento = formatDate(form.datos_personales.fecha_nacimiento)
+      }
+
+      if (form.sagrilaft.informacion_financiera.fecha_corte) {
+        form.sagrilaft.informacion_financiera.fecha_corte = formatDate(
+          form.sagrilaft.informacion_financiera.fecha_corte,
+        )
+      }
+
+      if (form.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento) {
+        form.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento = formatDate(
+          form.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento,
+        )
+      }
+
+      if (form.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento) {
+        form.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento = formatDate(
+          form.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento,
+        )
+      }
+
       const payload = {
         identificacion: form.datos_personales.numero_documento,
         informacion: form,
       }
 
-      http('http://localhost:3000/')
+      http()
         .post('records/save', payload)
         .then((response) => {
           console.log(':rocket: ~ .then ~ response', response.data)
@@ -484,7 +494,6 @@ const createPepData = (number) => {
   PepService.getCreateData(number).then((data) => (data_pep_familiar.value = data))
 }
 
-/*
 onMounted(() => {
   ProductService.getProductsMini().then((data) => {
     data_entidad_financiera.value = data
@@ -494,7 +503,6 @@ onMounted(() => {
     }
   })
 })
-  */
 
 // Watcher para sincronizar cambios en data_entidad_financiera con el formulario
 watch(
@@ -529,9 +537,9 @@ onMounted(() => {
   document.documentElement.style.setProperty('--animate-duration', '.9s')
   //document.body.style.background = `url(${imgBodyBackGround})`
 
-  if (user.value && user.value.username) {
-    http('http://localhost:3000/records')
-      .get(`buscar/${user.value.username}`)
+  if (user.value && user.value.identificacion) {
+    http()
+      .get(`records/buscar/${user.value.identificacion}`)
       .then((response) => {
         if (response.data) {
           console.log('Registro encontrado, cargando datos...')
@@ -563,7 +571,7 @@ onMounted(() => {
             <div class="flex flex-col items-center justify-center w-full gap-2">
               <span class="font-bold text-shadow-sm uppercase font-mono">Instrucciones Inscripción Hoja de Vida </span>
               <Image :src="login" alt="Image" width="150" class="mx-auto mb-2" />
-              <strong>Usuario {{ user.value.username }}</strong>
+              <strong>Usuario {{ user.value.identificacion }}</strong>
             </div>
           </template>
 
@@ -923,6 +931,7 @@ onMounted(() => {
                   size="small"
                   :class="{ 'p-invalid': errors.datos_personales.correo_electronico }"
                   fluid
+                  readonly
                 />
               </IconField>
               <label for="correo_electronico">Correo electrónico</label>
@@ -968,6 +977,7 @@ onMounted(() => {
                 <DatePicker
                   v-model="form.datos_personales.fecha_nacimiento"
                   :class="{ 'p-invalid': errors.datos_personales.fecha_nacimiento }"
+                  dateFormat="yy-mm-dd"
                   showIcon
                   fluid
                 />
@@ -1930,7 +1940,13 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <DatePicker v-model="form.sagrilaft.informacion_financiera.fecha_corte" size="small" showIcon fluid />
+                <DatePicker
+                  v-model="form.sagrilaft.informacion_financiera.fecha_corte"
+                  dateFormat="yy-mm-dd"
+                  size="small"
+                  showIcon
+                  fluid
+                />
               </IconField>
               <label for="fecha_corte">Fecha corte</label>
             </FloatLabel>
@@ -2044,6 +2060,7 @@ onMounted(() => {
               <IconField>
                 <DatePicker
                   v-model="form.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento"
+                  dateFormat="yy-mm-dd"
                   showIcon
                   fluid
                 />
@@ -2060,6 +2077,7 @@ onMounted(() => {
               <IconField>
                 <DatePicker
                   v-model="form.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento"
+                  dateFormat="yy-mm-dd"
                   showIcon
                   fluid
                 />

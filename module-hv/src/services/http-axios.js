@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { CONSTANT } from '@/env/index.js'
 
-const URL = CONSTANT.URL.API
+const URL = CONSTANT.URL.TARGET
 
 const TOKEN = window.localStorage.getItem('accessToken')
   ? JSON.parse(window.localStorage.getItem('accessToken')).token
