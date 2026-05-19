@@ -81,7 +81,7 @@ const create = (values) => {
     .post('auth/register', payload)
     .then((response) => {
       console.log(':rocket: ~ .then ~ response', response.data)
-      swal('Recovery Pass!', 'Su cuenta se ha creado!', 'success')
+      swal('Su cuenta se ha creado!', 'Verifica tu correo', 'success')
 
       router.push({ path: '/' })
     })

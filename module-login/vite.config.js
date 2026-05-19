@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   // Ejemplo: leer VITE_TARGET (prefijo VITE_ recomendado para variables cliente)
-  const URLTARGET = env.VITE_TARGET || env.VITE_API_URL || 'http://localhost:4000'
+  const URLTARGET = env.VITE_TARGET || env.VITE_API_URL || 'http://localhost:3000'
 
   // Si necesitas pasar una variable al código cliente que no sea VITE_*:
   // define: { __MY_CUSTOM_ENV__: JSON.stringify(env.MY_CUSTOM) }

@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /web/hv/
+
+  # Proxy para la API (equivalente al proxy de vite.config.js)
+  # Redirige 'api/...' a 'http://localhost:3000/...' (quita el '/api')
+  RewriteRule ^api/(.*)$ http://localhost:3000/$1 [P,L]
+
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /web/hv/index.html [L]
+</IfModule>

@@ -35,6 +35,7 @@ pnpm dev
 
 ```sh
 pnpm build
+pnpm run build --base=web/frontHv/
 ```
 
 ### Lint with [ESLint](https://eslint.org/)

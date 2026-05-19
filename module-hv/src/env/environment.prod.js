@@ -1,6 +1,6 @@
 // Ejemplo: leer VITE_TARGET (prefijo VITE_ recomendado para variables cliente)
 // const URLTARGET = 'https://app2.genteutil.net/web/firmaDigitalBack/public'
-const URLTARGET = '/api' // Redirige el tráfico mediante el proxy de Vite
+const URLTARGET = '/web/hv/api' // Redirige el tráfico mediante el proxy de Vite
 
 export const CONSTANT = Object.freeze({
   URL: {
