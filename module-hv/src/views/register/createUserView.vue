@@ -1,5 +1,8 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useToast } from 'primevue/usetoast'
+import { useMutation } from '@tanstack/vue-query'
+
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import InputText from 'primevue/inputtext'
@@ -23,13 +26,17 @@ import { zodResolver } from '@primevue/forms/resolvers/zod'
 import { z } from 'zod'
 
 import avatar_create from '@/assets/img/profile/avatar/user_256x256.png'
+import { ApiUser } from '@/api/apiUser'
 
+const { postRegisterUser } = ApiUser()
+
+const toast = useToast()
 const resolver = ref(
   zodResolver(
     z.object({
       password: z
         .string()
-        .min(3, { message: 'Minimum 3 characters.' })
+        .min(6, { message: 'Minimum 6 characters.' })
         .max(8, { message: 'Maximum 8 characters.' })
         .refine((value) => /[a-z]/.test(value), {
           message: 'Must have a lowercase letter.',
@@ -76,7 +83,12 @@ const goRouteLogin = () => {
 
 const create = (values) => {
   console.log(':rocket: ~ create ~ values', values)
-  const payload = { identificacion: username.value, email: email.value, password: password.value }
+  const payload = {
+    identificacion: username.value,
+    email: email.value,
+    password: password.value,
+    username: username.value,
+  }
   http
     .post('auth/register', payload)
     .then((response) => {
@@ -93,7 +105,43 @@ const create = (values) => {
 
 const onSubmit = handleSubmit((values) => {
   console.log('Submitted with', values)
-  create(values)
+  const payload = {
+    identificacion: username.value,
+    email: email.value,
+    password: password.value,
+    username: username.value,
+  }
+  mutatePostRegisterUser(payload)
+})
+
+const {
+  mutate: mutatePostRegisterUser,
+  data,
+  error,
+  isPending,
+  isError,
+  isSuccess,
+  isLoading,
+} = useMutation({
+  mutationFn: postRegisterUser,
+})
+
+watch(isSuccess, (val) => {
+  if (val) {
+    toast.add({ severity: 'success', summary: 'Éxito', detail: '¡Ingreso exitoso!', life: 3000 })
+    router.push({ name: 'hv' })
+  }
+})
+
+watch(isError, (val) => {
+  if (val) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: error.value?.message || 'Error desconocido',
+      life: 4000,
+    })
+  }
 })
 
 onMounted(() => {

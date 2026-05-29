@@ -16,7 +16,21 @@ export function ApiUser() {
     return await response.json()
   }
 
+  async function postRegisterUser({ identificacion, email, password, username }) {
+    // Aquí puedes usar fetch o axios
+    const response = await fetch(API + '/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identificacion, email, password, username }),
+    })
+    if (!response.ok) {
+      throw new Error('Registro fallido')
+    }
+    return await response.json()
+  }
+
   return {
     postLoginMb,
+    postRegisterUser,
   }
 }
