@@ -1,10 +1,11 @@
 <script setup>
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Card from 'primevue/card'
-import MacDock from '@/components/MacDock.vue'
-import ModernMenubar from '@/components/ModernMenubar.vue'
 
 
+const router = useRouter()
+const goRoutePoliticas = () => router.push({ name: 'politicasView' })
 
 
 onMounted(() => {
@@ -22,32 +23,13 @@ onMounted(() => {
 <template>
   <div>
     <!--Header Menubar -->
-
-
-
-
     <!--Content Main -->
     <div class="welcome-container">
 
 
       <div class="cards-container">
-        <Card
-          class="flex flex-col text-center py-6 px-4 rounded-lg w-full max-w-md md:max-w-lg lg:max-w-xl shadow-lg backdrop-blur-sm mx-2 transition-transform transition-shadow duration-200 hover:-translate-y-2 hover:scale-105 hover:shadow-2xl">
-          <template #header>
-            <div class="card-icon">
-              <i class="pi pi-users"></i>
-            </div>
-          </template>
-          <template #title> <span class="block text-center font-semibold text-lg">Monitoreo de Usuarios</span>
-          </template>
-          <template #content>
-            <p class="text-justify">
-              Supervisa la actividad y el estado de los usuarios en tiempo real. Accede a estadísticas, alertas y
-              reportes
-              de uso para una gestión eficiente.
-            </p>
-          </template>
-        </Card>
+
+        <!--
         <Card
           class="flex flex-col text-center py-6 px-4 rounded-lg w-full max-w-md md:max-w-lg lg:max-w-xl shadow-lg backdrop-blur-sm mx-2 transition-transform transition-shadow duration-200 hover:-translate-y-2 hover:scale-105 hover:shadow-2xl">
           <template #header>
@@ -55,29 +37,31 @@ onMounted(() => {
               <i class="pi pi-cog"></i>
             </div>
           </template>
-          <template #title> <span class="block text-center font-semibold text-lg">Configuración de Usuario</span>
+<template #title> <span class="block text-center font-semibold text-lg">Configuración de Usuario</span>
           </template>
-          <template #content>
+<template #content>
             <p class="text-justify">
               Personaliza la información y preferencias de cada usuario. Administra roles, permisos y datos personales
               de
               manera sencilla y segura.
             </p>
           </template>
-        </Card>
+</Card> -->
         <Card
-          class="flex flex-col text-center py-6 px-4 rounded-lg w-full max-w-md md:max-w-lg lg:max-w-xl shadow-lg backdrop-blur-sm mx-2 transition-transform transition-shadow duration-200 hover:-translate-y-2 hover:scale-105 hover:shadow-2xl">
+          class="flex flex-col text-center py-6 px-4 rounded-lg w-full max-w-md md:max-w-lg lg:max-w-xl shadow-lg backdrop-blur-sm mx-2 transition-transform transition-shadow duration-200 hover:-translate-y-2 hover:scale-105 hover:shadow-2xl"
+          @click="goRoutePoliticas()">
+
           <template #header>
             <div class="card-icon">
               <i class="pi pi-file"></i>
             </div>
           </template>
-          <template #title> <span class="block text-center font-semibold text-lg">Reporte de Auditoría</span>
+          <template #title> <span class="block text-center font-semibold text-lg">Documentos Legales</span>
           </template>
           <template #content>
             <p class="text-justify">
               Genera y consulta reportes detallados de auditoría. Visualiza el historial de acciones y cumple con los
-              estándares de seguridad y control.
+              estándares de seguridad y control Firma Electronica.
             </p>
           </template>
         </Card>

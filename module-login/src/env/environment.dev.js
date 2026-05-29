@@ -1,9 +1,17 @@
+// Ejemplo: leer VITE_TARGET (prefijo VITE_ recomendado para variables cliente)
+const URLTARGET =
+  import.meta.env.VITE_TARGET || import.meta.env.VITE_API_URL || 'http://localhost:4000'
+
 export const CONSTANT = Object.freeze({
   URL: {
-    API: 'http://localhost:4000/api/v1',
-    PUBLIC: 'http://localhost:4000/public/',
-    UPLOAD: 'http://localhost:4000/public/uploads/',
-    SOCKET: 'ws://localhost:4000',
-    COUCHDB: 'http://admin:zayro1989@localhost:5984/developer',
+    TARGET: `${URLTARGET}`,
+    API: `${URLTARGET}/api/v1`,
+    API_V1: `${URLTARGET}/api/v1`,
+    API_V2: `${URLTARGET}/api/v2`,
+    SERVER: `/api`,
+    PUBLIC: `${URLTARGET}/public/`,
+    UPLOAD: `${URLTARGET}/public/uploads/`,
+    SOCKET: `ws://localhost:4000`,
+    COUCHDB: `http://admin:zayro1989@localhost:5984/developer`,
   },
 })

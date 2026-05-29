@@ -1,14 +1,14 @@
 <template>
   <div>
     <!-- Dock fijo abajo -->
-    <div class="dock-fixed-bottom">
-      <Dock :model="items" position="bottom" class="dock-mac">
+    <div :class="containerClass">
+      <Dock :model="items" :position="primePosition" class="dock-mac">
         <template #item="{ item }">
           <button class="dock-btn-mac group" @click="onDockItemClick($event, item)">
             <span class="  group-hover:scale-125 transition-transform duration-200">
               <v-icon :name="item.icon" scale="2" :fill="item.color" />
             </span>
-            <span class="dock-label">{{ item.label }}</span>
+            <span class="dock-label">{{ item.label }} </span>
           </button>
         </template>
       </Dock>
@@ -79,11 +79,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import Dock from 'primevue/dock'
 import Dialog from 'primevue/dialog'
 import ThemeView from '@/views/theme/themeView.vue'
 import { useRouter } from 'vue-router'
+
 
 const showInicio = ref(false)
 const showPerfil = ref(false)
@@ -99,6 +100,8 @@ const router = useRouter()
 
 const goRouteMain = () => router.push({ name: 'mainWelcome' })
 const goRoute = () => router.push({ name: 'mainThemeView' })
+
+
 
 const items = ref([
   {
@@ -141,6 +144,32 @@ const onDockItemClick = (event, item) => {
   }
   event.preventDefault();
 }
+// Prop para controlar la posición del dock.
+// Valores aceptados: 'bottom-center' (default), 'bottom-left', 'bottom-right', 'left', 'right'
+const props = defineProps({
+  dockPosition: { type: String, default: 'bottom-center' }
+})
+
+const containerClass = computed(() => {
+  switch (props.dockPosition) {
+    case 'left':
+      return 'dock-fixed-left'
+    case 'right':
+      return 'dock-fixed-right'
+    case 'bottom-left':
+      return 'dock-fixed-bottom dock-left'
+    case 'bottom-right':
+      return 'dock-fixed-bottom dock-right'
+    default:
+      return 'dock-fixed-bottom'
+  }
+})
+
+const primePosition = computed(() => {
+  if (props.dockPosition === 'left') return 'left'
+  if (props.dockPosition === 'right') return 'right'
+  return 'bottom'
+})
 
 function toggleFullscreen(dialog) {
   if (dialog === 'inicio') fullscreenInicio.value = !fullscreenInicio.value
@@ -153,7 +182,7 @@ function toggleFullscreen(dialog) {
 <style scoped>
 /* Copia aquí los estilos relacionados con el Dock y los Dialogs */
 
-.dock-mac {}
+/* estilos para .dock-mac pueden añadirse aquí si se requieren */
 
 /* Reemplaza el estilo actual de .p-dock-list-container */
 :deep(.p-dock-list-container) {
@@ -198,6 +227,43 @@ function toggleFullscreen(dialog) {
   display: flex;
   justify-content: center;
   pointer-events: none;
+}
+
+.dock-fixed-left {
+  position: fixed;
+  left: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.dock-fixed-right {
+  position: fixed;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.dock-fixed-bottom.dock-left {
+  left: 30px;
+  justify-content: flex-start;
+  width: auto;
+}
+
+.dock-fixed-bottom.dock-right {
+  right: 30px;
+  left: auto;
+  justify-content: flex-end;
+  width: auto;
 }
 
 .dock-btn-mac {

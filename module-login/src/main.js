@@ -16,12 +16,22 @@ import ToastService from 'primevue/toastservice'
 // Icons
 import { OhVueIcon, addIcons } from 'oh-vue-icons'
 import * as FaIcons from 'oh-vue-icons/icons/fa'
+import * as BiIcons from 'oh-vue-icons/icons/bi'
+import * as FiIcons from 'oh-vue-icons/icons/fi'
 
-const Fa = Object.values({ ...FaIcons })
+// Importar específicamente el ícono BiFiletypePdf
+import { BiFiletypePdf, BiFilePdf } from 'oh-vue-icons/icons/bi'
 
 // Themes
 import Aura from '@primeuix/themes/aura'
 import Material from '@primeuix/themes/material'
+
+const Fa = Object.values({ ...FaIcons })
+const Bi = Object.values({ ...BiIcons })
+const Fi = Object.values({ ...FiIcons })
+
+// Registrar todos los íconos en una sola llamada
+addIcons(...Fa, ...Bi, ...Fi, BiFiletypePdf, BiFilePdf)
 
 const app = createApp(App)
 
@@ -99,8 +109,6 @@ app.use(PrimeVue, {
     filterMatchModeAny: 'Cualquiera',
   },
 })
-
-addIcons(...Fa)
 
 app.component('v-icon', OhVueIcon)
 

@@ -1,10 +1,11 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import { watch, onMounted } from 'vue'
-import { useAppStoreRef } from '@/stores/config'
+import { useAppStoreRef, useConfigStoreRef } from '@/stores/config'
 import { updatePrimaryPalette, updateSurfacePalette } from '@primeuix/themes'
 
 const appStore = useAppStoreRef()
+const configStore = useConfigStoreRef(); // Instancia de ConfigStore
 
 // Función para aplicar el tema globalmente
 const applyTheme = () => {
@@ -53,7 +54,7 @@ onMounted(() => {
 
 // Observa cambios en el store y aplica el tema automáticamente
 watch(
-  () => [appStore.themeColor, appStore.themeSurfaces],
+  () => [appStore.themeColor, appStore.themeSurfaces, configStore.getUser],
   applyTheme
 )
 
@@ -82,7 +83,7 @@ window.onload = function () {
 </script>
 
 <template>
-  <div>
+  <div class="content-app">
     <!-- ROUTE -->
     <router-view v-slot="{ Component }">
       <component :is="Component" />

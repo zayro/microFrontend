@@ -1,14 +1,22 @@
 <script setup>
-import { ref, onMounted, onBeforeMount } from 'vue'
+import { ref, onMounted, onBeforeMount, computed } from 'vue'
 
-import MacDock from '@/components/MacDock.vue'
+
 import ModernMenubar from '@/components/ModernMenubar.vue'
 
+import { useRouter } from 'vue-router';
 
-console.groupCollapsed('info Vite')
+const router = useRouter();
+
+
+console.groupCollapsed('info Vite Main')
 console.log('----------------------', import.meta.env.BASE_URL)
 console.log('----------------------', import.meta.env.VITE_DEBUG)
 console.groupEnd()
+
+const items = computed(() => [
+  { label: router.currentRoute.value.meta.label || 'Inicio', route: router.currentRoute.value.fullPath }
+]);
 
 const blocked = ref(true)
 
@@ -26,23 +34,52 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
 
-    <ModernMenubar :title="'Bienvenido'" :currentTime="currentTime" />
 
+  <header>
+    <ModernMenubar :title="'Bienvenido'" :currentTime="currentTime" :itemsBreadCrumb="items" />
+
+  </header>
+
+
+  <section>
     <!-- ROUTING con transición -->
     <router-view v-slot="{ Component }">
       <transition name="fade" mode="out-in">
         <component :is="Component" />
       </transition>
     </router-view>
+  </section>
 
+
+  <footer>
     <!-- Footer moderno -->
-    <MacDock />
-  </div>
+
+  </footer>
+
+
 </template>
 
 <style scoped>
+header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+section {
+  top: 60px;
+}
+
+
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
 .main-layout {
   min-height: 100vh;
   display: flex;

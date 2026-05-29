@@ -1,0 +1,46 @@
+/* main.css */
+
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+@import 'primeicons/primeicons.css';
+
+/* En tu archivo main.css o global */
+/* En tu archivo main.css o global */
+.my-app-dark {
+  --my-custom-bg: #18181b;
+  --my-custom-text: #f4f4f5;
+  /* Puedes sobreescribir variables de PrimeVue también */
+  --p-surface-500: #23272f;
+  --p-surface-700: #18181b;
+}
+
+.my-app-light {
+  --my-custom-bg: #dbdbdb;
+  --my-custom-text: #18181b;
+  /* Puedes sobreescribir variables de PrimeVue también */
+  --p-surface-500: #ffffff;
+  --p-surface-700: #f4f4f5;
+}
+
+html {
+  font-size: 14px;
+}
+
+body {
+  /* font-family: 'Open Sans', sans-serif; */
+  font-family: var(--font-family);
+  font-weight: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0px;
+}
+
+.background-main {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  /* background-image: linear-gradient(#ffffffeb, #ffffffeb), url('@/assets/logotipo/LOGO_GU_TRANSPARENTE.png'); */
+  background: linear-gradient(135deg, var(--p-surface-500, #e5e7eb) 0%, var(--p-surface-900, #225ba1) 100%);
+  background-image: url('@/assets/img/background/polygon3.jpg');
+  background-size: 300px;
+  background-repeat: repeat; /* 'space' genera separación uniforme y evita que la imagen se corte */
+}
