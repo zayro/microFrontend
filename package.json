@@ -11,7 +11,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "start:server": "node server.cjs"
   },
   "dependencies": {
     "@primeuix/themes": "^2.0.1",
@@ -42,6 +43,7 @@
     "eslint-plugin-vue": "~10.5.1",
     "express": "^5.2.1",
     "globals": "^16.5.0",
+    "http-proxy-middleware": "^4.0.0",
     "prettier": "3.6.2",
     "vite": "^7.2.4",
     "vite-plugin-vue-devtools": "^8.0.5"

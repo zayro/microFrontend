@@ -1,6 +1,7 @@
-import express from 'express'
-import { createProxyMiddleware } from 'http-proxy-middleware'
-import path from 'path'
+// server.js
+const express = require('express')
+const { createProxyMiddleware } = require('http-proxy-middleware')
+const path = require('path')
 
 const app = express()
 

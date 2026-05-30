@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
-
+import { useRouter } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
@@ -42,9 +42,11 @@ import {
   lista_modalidad_estudio,
 } from '@/services/dataList'
 
-const configStore = useConfigStoreRef()
+const confStore = useConfigStoreRef()
 
-const user = configStore.getUser
+const router = useRouter()
+
+const user = confStore.getUser
 
 const visible_datos_personales = ref(false)
 const visible_experiencia = ref(false)
@@ -63,6 +65,7 @@ const defaultFormData = {
     tipo_documento: null,
     numero_documento: user.value.identificacion,
     ciudad_documento_expedicion: '',
+    ciudad_nacimiento: '',
     fecha_documento_expedicion: '',
     pais_residencia: '',
     ciudad_residencia: '',
@@ -79,6 +82,7 @@ const defaultFormData = {
     alergico_descripcion: '',
     hijos_sn: '',
     hijos_numeros: '',
+    cantidad_personas_viven_casa: '',
   },
   tallas: {
     calzado: '',
@@ -306,6 +310,10 @@ const openDialogExperienciaAgregar = () => {
     fecha_inicio: '',
     fecha_fin: '',
     funciones: '',
+    motivo_retiro: '',
+    nombre_jefe: '',
+    telefono_jefe: '',
+    salario_anterior: '',
   })
 
   let index = form.experiencia_laboral.length - 1
@@ -377,51 +385,102 @@ function formatDate(date) {
   return `${year}-${month}-${day}`
 }
 
+// Función para parsear fechas de string yyyy-mm-dd a Date en la zona horaria local
+function parseDate(dateStr) {
+  if (!dateStr) return null
+  if (dateStr instanceof Date) return dateStr
+  const parts = dateStr.split('T')[0].split('-')
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10)
+    const month = parseInt(parts[1], 10) - 1
+    const day = parseInt(parts[2], 10)
+    return new Date(year, month, day)
+  }
+  const d = new Date(dateStr)
+  return isNaN(d.getTime()) ? null : d
+}
+
 async function onSubmit() {
   if (validate()) {
     submitted.value = true
 
     try {
-      if (form.datos_personales.fecha_documento_expedicion) {
-        form.datos_personales.fecha_documento_expedicion = formatDate(form.datos_personales.fecha_documento_expedicion)
+      // Clonamos el objeto form de manera selectiva preservando las instancias de Date
+      // y evitando mutar el estado reactivo que está enlazado a los componentes de la UI (como DatePicker).
+      const formCopy = {
+        ...form,
+        datos_personales: { ...form.datos_personales },
+        sagrilaft: {
+          ...form.sagrilaft,
+          informacion_financiera: { ...form.sagrilaft.informacion_financiera },
+          personas_expuestas_politicamente: { ...form.sagrilaft.personas_expuestas_politicamente },
+        },
+        experiencia_laboral: form.experiencia_laboral.map((exp) => ({ ...exp })),
+        estudios: form.estudios.map((est) => ({ ...est })),
       }
 
-      if (form.datos_personales.fecha_nacimiento) {
-        form.datos_personales.fecha_nacimiento = formatDate(form.datos_personales.fecha_nacimiento)
+      if (formCopy.datos_personales.fecha_documento_expedicion) {
+        formCopy.datos_personales.fecha_documento_expedicion = formatDate(formCopy.datos_personales.fecha_documento_expedicion)
       }
 
-      if (form.sagrilaft.informacion_financiera.fecha_corte) {
-        form.sagrilaft.informacion_financiera.fecha_corte = formatDate(
-          form.sagrilaft.informacion_financiera.fecha_corte,
+      if (formCopy.datos_personales.fecha_nacimiento) {
+        formCopy.datos_personales.fecha_nacimiento = formatDate(formCopy.datos_personales.fecha_nacimiento)
+      }
+
+      if (formCopy.sagrilaft.informacion_financiera.fecha_corte) {
+        formCopy.sagrilaft.informacion_financiera.fecha_corte = formatDate(
+          formCopy.sagrilaft.informacion_financiera.fecha_corte,
         )
       }
 
-      if (form.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento) {
-        form.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento = formatDate(
-          form.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento,
+      if (formCopy.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento) {
+        formCopy.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento = formatDate(
+          formCopy.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento,
         )
       }
 
-      if (form.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento) {
-        form.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento = formatDate(
-          form.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento,
+      if (formCopy.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento) {
+        formCopy.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento = formatDate(
+          formCopy.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento,
         )
+      }
+
+      if (Array.isArray(formCopy.experiencia_laboral)) {
+        formCopy.experiencia_laboral.forEach((exp) => {
+          if (exp.fecha_inicio) {
+            exp.fecha_inicio = formatDate(exp.fecha_inicio)
+          }
+          if (exp.fecha_fin) {
+            exp.fecha_fin = formatDate(exp.fecha_fin)
+          }
+        })
+      }
+
+      if (Array.isArray(formCopy.estudios)) {
+        formCopy.estudios.forEach((est) => {
+          if (est.fecha_inicio) {
+            est.fecha_inicio = formatDate(est.fecha_inicio)
+          }
+          if (est.fecha_fin) {
+            est.fecha_fin = formatDate(est.fecha_fin)
+          }
+        })
       }
 
       const payload = {
-        identificacion: form.datos_personales.numero_documento,
-        informacion: form,
+        identificacion: formCopy.datos_personales.numero_documento,
+        informacion: formCopy,
       }
 
       http()
         .post('records/save', payload)
         .then((response) => {
           console.log(':rocket: ~ .then ~ response', response.data)
-          swal('Recovery Pass!', 'Se ha actualizado el registro!', 'success')
+          swal('Se guardo!', 'Se ha guardado el registro!', 'success')
         })
         .catch((error) => {
           console.log(error)
-          swal('Wrong!', 'Sucedio Error al Crear Usuario!', 'error')
+          swal('Wrong!', 'Sucedio Error al guardar el registro!', 'error')
         })
     } catch (error) {
       console.error('Error en la llamada de red:', error)
@@ -494,6 +553,18 @@ const createPepData = (number) => {
   PepService.getCreateData(number).then((data) => (data_pep_familiar.value = data))
 }
 
+const redirectLogin = () => {
+  router.push({ name: 'defaultView' })
+}
+
+
+const closeSession = () => {
+  confStore.resetAll()
+  confStore.setUser({})
+  redirectLogin()
+}
+
+
 onMounted(() => {
   ProductService.getProductsMini().then((data) => {
     data_entidad_financiera.value = data
@@ -544,7 +615,66 @@ onMounted(() => {
         if (response.data) {
           console.log('Registro encontrado, cargando datos...')
           // Se asume que los datos vienen en response.data.informacion o directamente en response.data
-          Object.assign(form, response.data[0].informacion || response.data)
+          const loadedData = response.data[0].informacion || response.data
+
+          // Convertir campos de fecha de string a Date para evitar que DatePicker falle
+          if (loadedData.datos_personales) {
+            if (loadedData.datos_personales.fecha_documento_expedicion) {
+              loadedData.datos_personales.fecha_documento_expedicion = parseDate(
+                loadedData.datos_personales.fecha_documento_expedicion,
+              )
+            }
+            if (loadedData.datos_personales.fecha_nacimiento) {
+              loadedData.datos_personales.fecha_nacimiento = parseDate(
+                loadedData.datos_personales.fecha_nacimiento,
+              )
+            }
+          }
+
+          if (loadedData.sagrilaft && loadedData.sagrilaft.informacion_financiera) {
+            if (loadedData.sagrilaft.informacion_financiera.fecha_corte) {
+              loadedData.sagrilaft.informacion_financiera.fecha_corte = parseDate(
+                loadedData.sagrilaft.informacion_financiera.fecha_corte,
+              )
+            }
+          }
+
+          if (loadedData.sagrilaft && loadedData.sagrilaft.personas_expuestas_politicamente) {
+            if (loadedData.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento) {
+              loadedData.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento = parseDate(
+                loadedData.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento,
+              )
+            }
+            if (loadedData.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento) {
+              loadedData.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento = parseDate(
+                loadedData.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento,
+              )
+            }
+          }
+
+          if (Array.isArray(loadedData.experiencia_laboral)) {
+            loadedData.experiencia_laboral.forEach((exp) => {
+              if (exp.fecha_inicio) {
+                exp.fecha_inicio = parseDate(exp.fecha_inicio)
+              }
+              if (exp.fecha_fin) {
+                exp.fecha_fin = parseDate(exp.fecha_fin)
+              }
+            })
+          }
+
+          if (Array.isArray(loadedData.estudios)) {
+            loadedData.estudios.forEach((est) => {
+              if (est.fecha_inicio) {
+                est.fecha_inicio = parseDate(est.fecha_inicio)
+              }
+              if (est.fecha_fin) {
+                est.fecha_fin = parseDate(est.fecha_fin)
+              }
+            })
+          }
+
+          Object.assign(form, loadedData)
 
           data_entidad_financiera.value = [
             ...response.data[0].informacion.sagrilaft.operaciones_internacionales.productos_financieros,
@@ -578,7 +708,10 @@ onMounted(() => {
           <template #footer>
             <div class="flex flex-wrap items-center justify-center gap-4">
               <div class="flex items-center gap-2">
-                <Button label="Validar Formulario" class="w-90" @click="onSubmit" />
+                <Button label="Guardar" icon="pi pi-save" severity="success" outlined  class="w-90" @click="onSubmit" />
+              </div>
+              <div class="flex items-center gap-2">
+                <Button label="Cerrar" icon="pi pi-times" severity="danger" outlined class="w-90" @click="closeSession" />
               </div>
               <!--  <span class="text-surface-500 dark:text-surface-400">Updated 2 hours ago</span> -->
             </div>
@@ -826,7 +959,7 @@ onMounted(() => {
         </Panel>
       </div>
 
-      <div v-if="submitted" class="p-mt-3 p-message p-message-success">¡Formulario enviado correctamente!</div>
+      <!-- <div v-if="submitted" class="p-mt-3 p-message p-message-success">¡Formulario enviado correctamente!</div> -->
     </div>
   </div>
 
@@ -1098,6 +1231,22 @@ onMounted(() => {
 
           <div class="p-field">
             <FloatLabel variant="in">
+              <IconField>
+                <InputText
+                  v-model="form.datos_personales.ciudad_nacimiento"
+                  id="ciudad_nacimiento"
+                  size="small"
+                  :class="{ 'p-invalid': errors.datos_personales.ciudad_nacimiento }"
+                  fluid
+                />
+              </IconField>
+              <label for="ciudad_nacimiento">Ciudad de nacimiento</label>
+            </FloatLabel>
+          </div>
+
+
+          <div class="p-field">
+            <FloatLabel variant="in">
               <IconField class="w-full">
                 <Select
                   id="option"
@@ -1173,6 +1322,23 @@ onMounted(() => {
                 />
               </IconField>
               <label for="nombre_identitario">Nombre Identitario</label>
+            </FloatLabel>
+          </div>
+
+          <div class="p-field">
+            <FloatLabel variant="in">
+              <IconField>
+                <InputNumber
+                  v-model="form.datos_personales.cantidad_personas_viven_casa"
+                  placeholder="Cantidad de personas que viven en casa"
+                  id="cantidad_personas_viven_casa"
+                  size="small"
+                  :class="{ 'p-invalid': errors.datos_personales.cantidad_personas_viven_casa }"
+                  fluid
+                  mode="decimal"
+                />
+              </IconField>
+              <label for="cantidad_personas_viven_casa">Cantidad de personas que viven en casa</label>
             </FloatLabel>
           </div>
 
@@ -1435,7 +1601,7 @@ onMounted(() => {
     :data="form.experiencia_laboral[dialogIndex]"
     :style="{ width: '75rem' }"
   >
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-2 items-center justify-center">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
@@ -1463,6 +1629,51 @@ onMounted(() => {
             />
           </IconField>
           <label for="cargo">Cargo</label>
+        </FloatLabel>
+      </div>
+
+      <div class="p-field w-full">
+        <FloatLabel variant="in">
+          <IconField>
+            <InputText
+              v-model="form.experiencia_laboral[dialogIndex].nombre_jefe"
+                id="nombre_jefe"
+              size="small"
+              :class="{ 'p-invalid': errors.experiencia_laboral.nombre_jefe }"
+              fluid
+            />
+          </IconField>
+          <label for="nombre_jefe">Nombre del jefe</label>
+        </FloatLabel>
+      </div>
+
+      <div class="p-field w-full">
+        <FloatLabel variant="in">
+          <IconField>
+            <InputText
+              v-model="form.experiencia_laboral[dialogIndex].telefono_jefe"
+                id="telefono_jefe"
+              size="small"
+              :class="{ 'p-invalid': errors.experiencia_laboral.telefono_jefe }"
+              fluid
+            />
+          </IconField>
+          <label for="telefono_jefe">Telefono del jefe</label>
+        </FloatLabel>
+      </div>
+
+      <div class="p-field w-full">
+        <FloatLabel variant="in">
+          <IconField>
+            <InputText
+              v-model="form.experiencia_laboral[dialogIndex].salario_anterior"
+              id="salario_anterior"
+              size="small"
+              :class="{ 'p-invalid': errors.experiencia_laboral.salario_anterior }"
+              fluid
+            />
+          </IconField>
+          <label for="salario_anterior">Salario</label>
         </FloatLabel>
       </div>
 
@@ -1516,12 +1727,11 @@ onMounted(() => {
         </FloatLabel>
       </div>
 
-      <div class="p-field w-full col-span-5">
+      <div class="p-field w-full md:col-span-4">
         <FloatLabel variant="in">
           <Textarea
+            class="w-full"
             v-model="form.experiencia_laboral[dialogIndex].funciones"
-            class="p-fieldset-textarea"
-            :class="{ 'p-invalid': errors.experiencia_laboral.funciones }"
             rows="5"
             cols="30"
             fluid
@@ -1648,6 +1858,7 @@ onMounted(() => {
         </FloatLabel>
       </div>
     </div>
+
     <template #footer>
       <Button
         label="Cerrar"

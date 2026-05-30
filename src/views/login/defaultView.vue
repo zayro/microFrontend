@@ -58,21 +58,27 @@ const goRouteCreate = () => {
 watch(data, (val) => {
   if (val) {
     console.log('Data changed:', val)
-    confStore.setToken(val.token)
-    confStore.setUser({
-      username: val.username,
-      identificacion: val.identificacion,
-      email: val.email,
-    })
+    if(val.estado){
+      confStore.setToken(val.token)
+      confStore.setUser({
+        username: val.username,
+        identificacion: val.identificacion,
+        email: val.email,
+      })
+      router.push({ name: 'hv' })
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: val.error || 'No se ha validado Correo el usuario',
+        life: 4000,
+      })
+    }
+
   }
 })
 
-watch(isSuccess, (val) => {
-  if (val) {
-    toast.add({ severity: 'success', summary: 'Éxito', detail: '¡Ingreso exitoso!', life: 3000 })
-    router.push({ name: 'hv' })
-  }
-})
+
 
 watch(isError, (val) => {
   if (val) {

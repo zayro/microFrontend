@@ -16,10 +16,10 @@ export default defineConfig({
   server: {
     allowedHosts: true,
     proxy: {
-      '/api': {
+      '/apiHv': {
         target: 'http://localhost:3000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/apiHv/, ''),
       },
     },
   },

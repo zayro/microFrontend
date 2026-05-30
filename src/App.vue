@@ -3,6 +3,7 @@ import { RouterView } from 'vue-router'
 import { watch, onMounted } from 'vue'
 import { useAppStoreRef, useConfigStoreRef } from '@/stores/config'
 import { updatePrimaryPalette, updateSurfacePalette } from '@primeuix/themes'
+import Toast from 'primevue/toast'
 
 const appStore = useAppStoreRef()
 const configStore = useConfigStoreRef(); // Instancia de ConfigStore
@@ -84,9 +85,8 @@ window.onload = function () {
 
 
 <template>
-
+  <Toast />
   <RouterView />
-
 </template>
 
 <style scoped></style>

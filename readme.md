@@ -36,10 +36,19 @@ pnpm dev
 ```sh
 pnpm build
 pnpm run build --base=web/frontHv/
+pnpm run build --base=web/hv/
+pnpm run build --base=hv/
 ```
 
 ### Lint with [ESLint](https://eslint.org/)
 
 ```sh
 pnpm lint
+```
+
+
+### Dependencies Globlaes
+```sh
+pnpm install express --save-dev
+pnpm install http-proxy-middleware --save-dev
 ```

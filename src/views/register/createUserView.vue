@@ -103,16 +103,28 @@ const create = (values) => {
     })
 }
 
-const onSubmit = handleSubmit((values) => {
-  console.log('Submitted with', values)
-  const payload = {
-    identificacion: username.value,
-    email: email.value,
-    password: password.value,
-    username: username.value,
+const onSubmit = handleSubmit(
+  (values) => {
+    console.log('Submitted with', values)
+    const payload = {
+      identificacion: username.value,
+      email: email.value,
+      password: password.value,
+      username: username.value,
+    }
+    mutatePostRegisterUser(payload)
+  },
+  ({ errors }) => {
+    Object.values(errors).forEach((message) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error de Validación',
+        detail: message,
+        life: 4000,
+      })
+    })
   }
-  mutatePostRegisterUser(payload)
-})
+)
 
 const {
   mutate: mutatePostRegisterUser,
@@ -128,7 +140,7 @@ const {
 
 watch(isSuccess, (val) => {
   if (val) {
-    toast.add({ severity: 'success', summary: 'Éxito', detail: '¡Ingreso exitoso!', life: 3000 })
+    toast.add({ severity: 'success', summary: 'Éxito', detail: 'Se creo usuario exitosamente!', life: 3000 })
     router.push({ name: 'hv' })
   }
 })
