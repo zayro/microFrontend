@@ -272,6 +272,9 @@ export const lista_documento = [
   { label: 'Cédula de extranjería', value: 'CE' },
   { label: 'Pasaporte', value: 'PA' },
   { label: 'Tarjeta de identidad', value: 'TI' },
+  { label: 'Permiso Especial Permanencia', value: 'PE' },
+  { label: 'Permiso Protección Especial', value: 'PO' },
+  { label: 'Nuip', value: 'NU' },
 ]
 
 export const lista_nivel_estudio = [

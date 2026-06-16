@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
@@ -16,6 +16,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputMask from 'primevue/inputmask'
 import Image from 'primevue/image'
+import Message from 'primevue/message'
 
 import { useConfigStoreRef } from '@/stores/config'
 
@@ -55,6 +56,8 @@ const dialogIndexEstudio = ref(null)
 const visible_educacion = ref(false)
 const visible_sagrilaft = ref(false)
 const visible_errores = ref(false)
+const hasUnsavedChanges = ref(false)
+const isLoadingInitialData = ref(true)
 
 const defaultFormData = {
   datos_personales: {
@@ -110,7 +113,7 @@ const defaultFormData = {
       productos_financieros_sn: '',
       productos_financieros: [],
       contrato_servidor_publico_extranjero_sn: '',
-      contrato_servidor_publico_extranjero_detalles: '',
+      contrato_servidor_publico_extranjero_detalles: ''
     },
     informacion_financiera: {
       ingresos_mensuales: '',
@@ -206,13 +209,14 @@ const errors = reactive({
     },
   ],
   sagrilaft: {
+    declaracion_origen_proveniente: '',
     operaciones_internacionales: {
       moneda_extgranjera_sn: '',
       tipo_moneda: '',
       tipo_operacion: '',
       productos_financieros_sn: '',
       contrato_servidor_publico_extranjero_sn: '',
-      contrato_servidor_publico_extranjero_detalles: '',
+      contrato_servidor_publico_extranjero_detalles: ''
     },
     informacion_financiera: {
       ingresos_mensuales: '',
@@ -300,6 +304,32 @@ const validate = () => {
   })
 
   return errorList.value.length === 0
+}
+
+// Función para mostrar confirmación de cambios sin guardar
+const confirmarSalida = async () => {
+  if (!hasUnsavedChanges.value) return true
+
+  return new Promise((resolve) => {
+    swal({
+      title: '¿Cambios sin guardar?',
+      text: 'Tienes cambios sin guardar. ¿Deseas continuar sin guardarlos?',
+      icon: 'warning',
+      buttons: {
+        cancel: 'Cancelar',
+        confirm: 'Continuar'
+      },
+    }).then((willExit) => {
+      resolve(willExit)
+    })
+  })
+}
+
+const manejarBeforeUnload = (event) => {
+  if (hasUnsavedChanges.value) {
+    event.preventDefault()
+    event.returnValue = ''
+  }
 }
 
 const openDialogExperienciaAgregar = () => {
@@ -476,6 +506,7 @@ async function onSubmit() {
         .post('records/save', payload)
         .then((response) => {
           console.log(':rocket: ~ .then ~ response', response.data)
+          hasUnsavedChanges.value = false
           swal('Se guardo!', 'Se ha guardado el registro!', 'success')
         })
         .catch((error) => {
@@ -553,27 +584,25 @@ const createPepData = (number) => {
   PepService.getCreateData(number).then((data) => (data_pep_familiar.value = data))
 }
 
-const redirectLogin = () => {
-  router.push({ name: 'defaultView' })
+const closeSession = async () => {
+  const shouldExit = await confirmarSalida()
+  if (shouldExit !== false) {
+    confStore.resetAll()
+    confStore.setUser({})
+    router.push({ name: 'defaultView' })
+  }
 }
 
-
-const closeSession = () => {
-  confStore.resetAll()
-  confStore.setUser({})
-  redirectLogin()
-}
-
-
-onMounted(() => {
-  ProductService.getProductsMini().then((data) => {
-    data_entidad_financiera.value = data
-    // Inicializar productos_financieros si hay datos
-    if (Array.isArray(data)) {
-      form.sagrilaft.operaciones_internacionales.productos_financieros = [...data]
+// Watcher para detectar cambios en el formulario
+watch(
+  form,
+  () => {
+    if (!isLoadingInitialData.value) {
+      hasUnsavedChanges.value = true
     }
-  })
-})
+  },
+  { deep: true },
+)
 
 // Watcher para sincronizar cambios en data_entidad_financiera con el formulario
 watch(
@@ -602,10 +631,30 @@ watch(
 )
 
 onMounted(() => {
-  document.body.style.overflowX = 'hidden'
-  document.body.style.overflowY = 'hidden'
+  ProductService.getProductsMini().then((data) => {
+    data_entidad_financiera.value = data
+    // Inicializar productos_financieros si hay datos
+    if (Array.isArray(data)) {
+      form.sagrilaft.operaciones_internacionales.productos_financieros = [...data]
+    }
+  })
+})
+
+onMounted(() => {
+  window.addEventListener("beforeunload", manejarBeforeUnload)
+})
+
+onBeforeUnmount(() => {
+  // Limpiar listener al desmontar componente
+  window.removeEventListener("beforeunload", manejarBeforeUnload)
+  hasUnsavedChanges.value = false
+})
+
+onMounted(() => {
   document.title = 'Hoja de Vida'
   document.documentElement.style.setProperty('--animate-duration', '.9s')
+  //document.body.style.overflowX = 'hidden'
+  //document.body.style.overflowY = 'hidden'
   //document.body.style.background = `url(${imgBodyBackGround})`
 
   if (user.value && user.value.identificacion) {
@@ -683,17 +732,23 @@ onMounted(() => {
           data_pep_familiar.value = [
             ...response.data[0].informacion.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_persona,
           ]
+
+          // Marcar que terminó la carga inicial
+          isLoadingInitialData.value = false
         }
       })
       .catch((error) => {
         console.log('No se encontraron registros previos o hubo un error:', error)
+        isLoadingInitialData.value = false
       })
+  } else {
+    isLoadingInitialData.value = false
   }
 })
 </script>
 
 <template>
-  <div class="flex flex-row min-h-screen items-center justify-between background-main transition-colors duration-300">
+  <div class="flex flex-row min-h-screen items-center justify-between background-main transition-colors duration-300 cards-container">
     <div class="flex flex-col justify-start items-center w-full">
       <div class="card gap-3 mb-4 lg:w-[70%] md:w-[90%] sm:w-[100%]">
         <Panel class="p-panel-noborder">
@@ -708,10 +763,11 @@ onMounted(() => {
           <template #footer>
             <div class="flex flex-wrap items-center justify-center gap-4">
               <div class="flex items-center gap-2">
-                <Button label="Guardar" icon="pi pi-save" severity="success" outlined  class="w-90" @click="onSubmit" />
+                <Button label="Guardar" icon="pi pi-save" severity="success" outlined class="w-90" @click="onSubmit" />
               </div>
               <div class="flex items-center gap-2">
-                <Button label="Cerrar" icon="pi pi-times" severity="danger" outlined class="w-90" @click="closeSession" />
+                <Button label="Cerrar" icon="pi pi-times" severity="danger" outlined class="w-90"
+                  @click="closeSession" />
               </div>
               <!--  <span class="text-surface-500 dark:text-surface-400">Updated 2 hours ago</span> -->
             </div>
@@ -735,15 +791,8 @@ onMounted(() => {
                         <strong class="font-bold">Datos Personales</strong>
                       </div>
                       <div>
-                        <Button
-                          icon="pi pi-pen-to-square"
-                          severity="info"
-                          raised
-                          rounded
-                          aria-label="DP"
-                          text
-                          @click="visible_datos_personales = true"
-                        />
+                        <Button icon="pi pi-pen-to-square" severity="info" raised rounded aria-label="DP" text
+                          @click="visible_datos_personales = true" />
                       </div>
                     </div>
                   </template>
@@ -793,14 +842,8 @@ onMounted(() => {
                   <div class="flex items-center gap-2">
                     <strong class="font-bold">Experiencia laboral</strong>
                     <div>
-                      <Button
-                        icon="pi pi-pen-to-square"
-                        severity="info"
-                        raised
-                        rounded
-                        text
-                        @click="openDialogExperienciaAgregar()"
-                      />
+                      <Button icon="pi pi-pen-to-square" severity="info" raised rounded text
+                        @click="openDialogExperienciaAgregar()" />
                     </div>
                   </div>
                 </template>
@@ -810,27 +853,13 @@ onMounted(() => {
                     <template #opposite="slotProps">
                       <div class="flex flex-row justify-end">
                         <div class="pl-2">
-                          <Button
-                            icon="pi pi-pen-to-square"
-                            variant="text"
-                            severity="warn"
-                            raised
-                            rounded
-                            aria-label="Filter"
-                            @click="openDialogExperienciaEditar(slotProps.index)"
-                          />
+                          <Button icon="pi pi-pen-to-square" variant="text" severity="warn" raised rounded
+                            aria-label="Filter" @click="openDialogExperienciaEditar(slotProps.index)" />
                         </div>
 
                         <div class="pl-2">
-                          <Button
-                            icon="pi pi-trash"
-                            severity="danger"
-                            variant="text"
-                            raised
-                            rounded
-                            aria-label="Filter"
-                            @click="openDialogExperienciaEliminar(slotProps.index)"
-                          />
+                          <Button icon="pi pi-trash" severity="danger" variant="text" raised rounded aria-label="Filter"
+                            @click="openDialogExperienciaEliminar(slotProps.index)" />
                         </div>
                       </div>
                     </template>
@@ -840,8 +869,7 @@ onMounted(() => {
                           <div class="mb-2">
                             <small class="text-surface-500 dark:text-surface-400">
                               <span> Empresa: {{ slotProps.item.nombre_empresa }}</span> - <span> Cargo:</span>
-                              {{ slotProps.item.cargo }}</small
-                            >
+                              {{ slotProps.item.cargo }}</small>
                           </div>
 
                           <div>
@@ -867,14 +895,8 @@ onMounted(() => {
                   <div class="flex items-center gap-2">
                     <strong class="font-bold">Estudios</strong>
                     <div>
-                      <Button
-                        icon="pi pi-pen-to-square"
-                        severity="info"
-                        raised
-                        rounded
-                        text
-                        @click="openDialogEducacionAgregar()"
-                      />
+                      <Button icon="pi pi-pen-to-square" severity="info" raised rounded text
+                        @click="openDialogEducacionAgregar()" />
                     </div>
                   </div>
                 </template>
@@ -884,27 +906,13 @@ onMounted(() => {
                     <template #opposite="slotProps">
                       <div class="flex flex-row justify-end">
                         <div class="pl-2">
-                          <Button
-                            icon="pi pi-pen-to-square"
-                            variant="text"
-                            severity="warn"
-                            raised
-                            rounded
-                            aria-label="Filter"
-                            @click="openDialogEducacionEditar(slotProps.index)"
-                          />
+                          <Button icon="pi pi-pen-to-square" variant="text" severity="warn" raised rounded
+                            aria-label="Filter" @click="openDialogEducacionEditar(slotProps.index)" />
                         </div>
 
                         <div class="pl-2">
-                          <Button
-                            icon="pi pi-trash"
-                            severity="danger"
-                            variant="text"
-                            raised
-                            rounded
-                            aria-label="Filter"
-                            @click="openDialogEducacionEliminar(slotProps.index)"
-                          />
+                          <Button icon="pi pi-trash" severity="danger" variant="text" raised rounded aria-label="Filter"
+                            @click="openDialogEducacionEliminar(slotProps.index)" />
                         </div>
                       </div>
                     </template>
@@ -915,8 +923,7 @@ onMounted(() => {
                           <div class="mb-2">
                             <small class="text-surface-500 dark:text-surface-400">
                               <span> Estudio: {{ slotProps.item.nombre }}</span> - <span> Nivel:</span>
-                              {{ slotProps.item.nivel.label }}</small
-                            >
+                              {{ slotProps.item.nivel.label }}</small>
                           </div>
 
                           <div>
@@ -942,14 +949,8 @@ onMounted(() => {
                   <div class="flex items-center gap-2">
                     <strong class="font-bold">Sagrilaft</strong>
                     <div>
-                      <Button
-                        icon="pi pi-pen-to-square"
-                        severity="info"
-                        raised
-                        rounded
-                        text
-                        @click="openDialogSagrilaftAgregar()"
-                      />
+                      <Button icon="pi pi-pen-to-square" severity="info" raised rounded text
+                        @click="openDialogSagrilaftAgregar()" />
                     </div>
                   </div>
                 </template>
@@ -980,27 +981,16 @@ onMounted(() => {
   </Dialog>
 
   <!-- Modal Datos Basicos -->
-  <Dialog
-    v-model:visible="visible_datos_personales"
-    modal
-    header="Editar Informacion Personal"
-    :data="form.datos_personales"
-    :style="{ width: '75rem' }"
-  >
+  <Dialog v-model:visible="visible_datos_personales" modal header="Editar Informacion Personal"
+    :data="form.datos_personales" :style="{ width: '75rem' }">
     <Panel header="Datos Personales" class="p-panel-noborder">
       <form @submit.prevent="onSubmit" novalidate>
         <div class="grid lg:grid-cols-4 md:grid-cols-3 gap-2">
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.primer_nombre"
-                  placeholder="Primer nombre"
-                  id="primer_nombre"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.primer_nombre }"
-                  fluid
-                />
+                <InputText v-model="form.datos_personales.primer_nombre" placeholder="Primer nombre" id="primer_nombre"
+                  size="small" :class="{ 'p-invalid': errors.datos_personales.primer_nombre }" fluid />
               </IconField>
               <label for="primer_nombre">Primer nombre</label>
             </FloatLabel>
@@ -1009,14 +999,9 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.segundo_nombre"
-                  placeholder="Segundo nombre"
-                  id="segundo_nombre"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.segundo_nombre }"
-                  fluid
-                />
+                <InputText v-model="form.datos_personales.segundo_nombre" placeholder="Segundo nombre"
+                  id="segundo_nombre" size="small" :class="{ 'p-invalid': errors.datos_personales.segundo_nombre }"
+                  fluid />
               </IconField>
               <label for="segundo_nombre">Segundo nombre</label>
             </FloatLabel>
@@ -1025,14 +1010,9 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.primer_apellido"
-                  placeholder="Primer apellido"
-                  id="primer_apellido"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.primer_apellido }"
-                  fluid
-                />
+                <InputText v-model="form.datos_personales.primer_apellido" placeholder="Primer apellido"
+                  id="primer_apellido" size="small" :class="{ 'p-invalid': errors.datos_personales.primer_apellido }"
+                  fluid />
               </IconField>
               <label for="primer_apellido">Primer Apellido</label>
             </FloatLabel>
@@ -1041,14 +1021,9 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.segundo_apellido"
-                  placeholder="Segundo apellido"
-                  id="segundo_apellido"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.segundo_apellido }"
-                  fluid
-                />
+                <InputText v-model="form.datos_personales.segundo_apellido" placeholder="Segundo apellido"
+                  id="segundo_apellido" size="small" :class="{ 'p-invalid': errors.datos_personales.segundo_apellido }"
+                  fluid />
               </IconField>
               <label for="segundo_apellido">Segundo Apellido</label>
             </FloatLabel>
@@ -1057,15 +1032,9 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.correo_electronico"
-                  placeholder="Correo electrónico"
-                  id="correo_electronico"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.correo_electronico }"
-                  fluid
-                  readonly
-                />
+                <InputText v-model="form.datos_personales.correo_electronico" placeholder="Correo electrónico"
+                  id="correo_electronico" size="small"
+                  :class="{ 'p-invalid': errors.datos_personales.correo_electronico }" fluid readonly />
               </IconField>
               <label for="correo_electronico">Correo electrónico</label>
             </FloatLabel>
@@ -1074,15 +1043,9 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputMask
-                  v-model="form.datos_personales.telefono"
-                  id="telefono"
-                  mask="999-9999999"
-                  placeholder="xxx-xxxxxx"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.telefono }"
-                  fluid
-                />
+                <InputMask v-model="form.datos_personales.telefono" id="telefono" mask="999-9999999"
+                  placeholder="xxx-xxxxxx" size="small" :class="{ 'p-invalid': errors.datos_personales.telefono }"
+                  fluid />
               </IconField>
               <label for="telefono">telefono</label>
             </FloatLabel>
@@ -1091,14 +1054,8 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
-                  v-model="form.datos_personales.estado_civil"
-                  :options="lista_estado_civil"
-                  optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.estado_civil }"
-                  fluid
-                />
+                <Select id="option" v-model="form.datos_personales.estado_civil" :options="lista_estado_civil"
+                  optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.estado_civil }" fluid />
                 <label for="estado_civil">Estado civil</label>
               </IconField>
             </FloatLabel>
@@ -1107,13 +1064,9 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <DatePicker
-                  v-model="form.datos_personales.fecha_nacimiento"
-                  :class="{ 'p-invalid': errors.datos_personales.fecha_nacimiento }"
-                  dateFormat="yy-mm-dd"
-                  showIcon
-                  fluid
-                />
+                <DatePicker v-model="form.datos_personales.fecha_nacimiento"
+                  :class="{ 'p-invalid': errors.datos_personales.fecha_nacimiento }" dateFormat="yy-mm-dd" showIcon
+                  fluid />
               </IconField>
               <label for="fecha_nacimiento">Fecha nacimiento</label>
             </FloatLabel>
@@ -1122,14 +1075,8 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
-                  v-model="form.datos_personales.pais_residencia"
-                  :options="lista_paises"
-                  optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.pais_residencia }"
-                  fluid
-                />
+                <Select id="option" v-model="form.datos_personales.pais_residencia" :options="lista_paises"
+                  optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.pais_residencia }" fluid />
               </IconField>
               <label for="pais_residencia">País de residencia</label>
             </FloatLabel>
@@ -1138,13 +1085,8 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.ciudad_residencia"
-                  id="ciudad_residencia"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.ciudad_residencia }"
-                  fluid
-                />
+                <InputText v-model="form.datos_personales.ciudad_residencia" id="ciudad_residencia" size="small"
+                  :class="{ 'p-invalid': errors.datos_personales.ciudad_residencia }" fluid />
               </IconField>
               <label for="ciudad_residencia">Ciudad de residencia</label>
             </FloatLabel>
@@ -1153,13 +1095,8 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.direccion_residencia"
-                  id="direccion_residencia"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.direccion_residencia }"
-                  fluid
-                />
+                <InputText v-model="form.datos_personales.direccion_residencia" id="direccion_residencia" size="small"
+                  :class="{ 'p-invalid': errors.datos_personales.direccion_residencia }" fluid />
               </IconField>
               <label for="direccion_residencia">Dirección de residencia</label>
             </FloatLabel>
@@ -1168,15 +1105,9 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  class="w-full"
-                  id="option"
-                  v-model="form.datos_personales.tipo_documento"
-                  :options="lista_documento"
-                  optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.tipo_documento }"
-                  fluid
-                />
+                <Select class="w-full" id="option" v-model="form.datos_personales.tipo_documento"
+                  :options="lista_documento" optionLabel="label"
+                  :class="{ 'p-invalid': errors.datos_personales.tipo_documento }" fluid />
               </IconField>
               <label for="tipo_documento">Tipo Documento</label>
             </FloatLabel>
@@ -1185,15 +1116,9 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.numero_documento"
-                  placeholder="Número de documento"
-                  id="numero_documento"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.numero_documento }"
-                  readonly
-                  fluid
-                />
+                <InputText v-model="form.datos_personales.numero_documento" placeholder="Número de documento"
+                  id="numero_documento" size="small" :class="{ 'p-invalid': errors.datos_personales.numero_documento }"
+                  readonly fluid />
               </IconField>
               <label for="numero_documento">Numero Documento</label>
             </FloatLabel>
@@ -1202,13 +1127,9 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <DatePicker
-                  v-model="form.datos_personales.fecha_documento_expedicion"
-                  :class="{ 'p-invalid': errors.datos_personales.fecha_expedicion }"
-                  dateFormat="yy-mm-dd"
-                  showIcon
-                  fluid
-                />
+                <DatePicker v-model="form.datos_personales.fecha_documento_expedicion"
+                  :class="{ 'p-invalid': errors.datos_personales.fecha_expedicion }" dateFormat="yy-mm-dd" showIcon
+                  fluid />
               </IconField>
               <label for="fecha_expedicion">F. expedición documento</label>
             </FloatLabel>
@@ -1217,13 +1138,8 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.ciudad_documento_expedicion"
-                  id="ciudad_documento_expedicion"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.ciudad_documento_expedicion }"
-                  fluid
-                />
+                <InputText v-model="form.datos_personales.ciudad_documento_expedicion" id="ciudad_documento_expedicion"
+                  size="small" :class="{ 'p-invalid': errors.datos_personales.ciudad_documento_expedicion }" fluid />
               </IconField>
               <label for="ciudad_documento_expedicion">Ciudad de expedición del documento</label>
             </FloatLabel>
@@ -1232,13 +1148,8 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.ciudad_nacimiento"
-                  id="ciudad_nacimiento"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.ciudad_nacimiento }"
-                  fluid
-                />
+                <InputText v-model="form.datos_personales.ciudad_nacimiento" id="ciudad_nacimiento" size="small"
+                  :class="{ 'p-invalid': errors.datos_personales.ciudad_nacimiento }" fluid />
               </IconField>
               <label for="ciudad_nacimiento">Ciudad de nacimiento</label>
             </FloatLabel>
@@ -1248,14 +1159,8 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField class="w-full">
-                <Select
-                  id="option"
-                  v-model="form.datos_personales.genero"
-                  :options="lista_genero"
-                  optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.genero }"
-                  fluid
-                />
+                <Select id="option" v-model="form.datos_personales.genero" :options="lista_genero" optionLabel="label"
+                  :class="{ 'p-invalid': errors.datos_personales.genero }" fluid />
                 <label for="genero">Género Biológico</label>
               </IconField>
             </FloatLabel>
@@ -1264,14 +1169,8 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField class="w-full">
-                <Select
-                  id="option"
-                  v-model="form.datos_personales.genero_identitario_sn"
-                  :options="opcion_sn"
-                  optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.genero_identitario_sn }"
-                  fluid
-                />
+                <Select id="option" v-model="form.datos_personales.genero_identitario_sn" :options="opcion_sn"
+                  optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.genero_identitario_sn }" fluid />
                 <label for="genero_identitario">Género Identitario</label>
               </IconField>
             </FloatLabel>
@@ -1280,14 +1179,9 @@ onMounted(() => {
           <div class="p-field" v-if="form.datos_personales.genero_identitario_sn.value === 'SI'">
             <FloatLabel variant="in">
               <IconField class="w-full">
-                <Select
-                  id="option"
-                  v-model="form.datos_personales.genero_identitario"
-                  :options="lista_genero_identitario"
-                  optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.genero_identitario }"
-                  fluid
-                />
+                <Select id="option" v-model="form.datos_personales.genero_identitario"
+                  :options="lista_genero_identitario" optionLabel="label"
+                  :class="{ 'p-invalid': errors.datos_personales.genero_identitario }" fluid />
                 <label for="genero_identitario">Género Identitario</label>
               </IconField>
             </FloatLabel>
@@ -1296,14 +1190,8 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField class="w-full">
-                <Select
-                  id="option"
-                  v-model="form.datos_personales.nombre_identitario_sn"
-                  :options="opcion_sn"
-                  optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.nombre_identitario }"
-                  fluid
-                />
+                <Select id="option" v-model="form.datos_personales.nombre_identitario_sn" :options="opcion_sn"
+                  optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.nombre_identitario }" fluid />
                 <label for="nombre_identitario">Nombre Identitario</label>
               </IconField>
             </FloatLabel>
@@ -1312,14 +1200,9 @@ onMounted(() => {
           <div class="p-field" v-if="form.datos_personales.nombre_identitario_sn.value === 'SI'">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.nombre_identitario"
-                  placeholder="Nombre identitario"
-                  id="nombre_identitario"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.nombre_identitario }"
-                  fluid
-                />
+                <InputText v-model="form.datos_personales.nombre_identitario" placeholder="Nombre identitario"
+                  id="nombre_identitario" size="small"
+                  :class="{ 'p-invalid': errors.datos_personales.nombre_identitario }" fluid />
               </IconField>
               <label for="nombre_identitario">Nombre Identitario</label>
             </FloatLabel>
@@ -1328,15 +1211,9 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField>
-                <InputNumber
-                  v-model="form.datos_personales.cantidad_personas_viven_casa"
-                  placeholder="Cantidad de personas que viven en casa"
-                  id="cantidad_personas_viven_casa"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.cantidad_personas_viven_casa }"
-                  fluid
-                  mode="decimal"
-                />
+                <InputNumber v-model="form.datos_personales.cantidad_personas_viven_casa"
+                  placeholder="Cantidad de personas que viven en casa" id="cantidad_personas_viven_casa" size="small"
+                  :class="{ 'p-invalid': errors.datos_personales.cantidad_personas_viven_casa }" fluid mode="decimal" />
               </IconField>
               <label for="cantidad_personas_viven_casa">Cantidad de personas que viven en casa</label>
             </FloatLabel>
@@ -1345,14 +1222,8 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField class="w-full">
-                <Select
-                  id="option"
-                  v-model="form.datos_personales.hijos_sn"
-                  :options="opcion_sn"
-                  optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.hijos_sn }"
-                  fluid
-                />
+                <Select id="option" v-model="form.datos_personales.hijos_sn" :options="opcion_sn" optionLabel="label"
+                  :class="{ 'p-invalid': errors.datos_personales.hijos_sn }" fluid />
                 <label for="hijos_sn">Tiene hijos</label>
               </IconField>
             </FloatLabel>
@@ -1361,14 +1232,8 @@ onMounted(() => {
           <div class="p-field" v-if="form.datos_personales.hijos_sn.value === 'SI'">
             <FloatLabel variant="in">
               <IconField>
-                <InputNumber
-                  v-model="form.datos_personales.numero_hijos"
-                  placeholder="Número de hijos"
-                  id="numero_hijos"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.numero_hijos }"
-                  fluid
-                />
+                <InputNumber v-model="form.datos_personales.numero_hijos" placeholder="Número de hijos"
+                  id="numero_hijos" size="small" :class="{ 'p-invalid': errors.datos_personales.numero_hijos }" fluid />
               </IconField>
               <label for="numero_hijos">Número de hijos</label>
             </FloatLabel>
@@ -1377,14 +1242,8 @@ onMounted(() => {
           <div class="p-field">
             <FloatLabel variant="in">
               <IconField class="w-full">
-                <Select
-                  id="option"
-                  v-model="form.datos_personales.alergico_sn"
-                  :options="opcion_sn"
-                  optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.alergico_sn }"
-                  fluid
-                />
+                <Select id="option" v-model="form.datos_personales.alergico_sn" :options="opcion_sn" optionLabel="label"
+                  :class="{ 'p-invalid': errors.datos_personales.alergico_sn }" fluid />
                 <label for="alergico_sn">Es alérgico</label>
               </IconField>
             </FloatLabel>
@@ -1393,14 +1252,9 @@ onMounted(() => {
           <div class="p-field" v-if="form.datos_personales.alergico_sn.value === 'SI'">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.datos_personales.alergico_descripcion"
-                  placeholder="Alergias"
-                  id="alergico_descripcion"
-                  size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.alergico_descripcion }"
-                  fluid
-                />
+                <InputText v-model="form.datos_personales.alergico_descripcion" placeholder="Alergias"
+                  id="alergico_descripcion" size="small"
+                  :class="{ 'p-invalid': errors.datos_personales.alergico_descripcion }" fluid />
               </IconField>
               <label for="alergico_descripcion">Alergias</label>
             </FloatLabel>
@@ -1414,14 +1268,9 @@ onMounted(() => {
         <div class="p-field w-full">
           <FloatLabel variant="in">
             <IconField>
-              <InputText
-                v-model="form.datos_contacto_adicional.nombre_contacto"
-                placeholder="Nombre contacto de emergencia"
-                id="contacto_emergencia_nombre"
-                size="small"
-                :class="{ 'p-invalid': errors.datos_contacto_adicional.nombre_contacto }"
-                fluid
-              />
+              <InputText v-model="form.datos_contacto_adicional.nombre_contacto"
+                placeholder="Nombre contacto de emergencia" id="contacto_emergencia_nombre" size="small"
+                :class="{ 'p-invalid': errors.datos_contacto_adicional.nombre_contacto }" fluid />
             </IconField>
             <label for="contacto_emergencia_nombre">Nombre contacto de emergencia</label>
           </FloatLabel>
@@ -1430,15 +1279,9 @@ onMounted(() => {
         <div class="p-field w-full">
           <FloatLabel variant="in">
             <IconField>
-              <InputMask
-                v-model="form.datos_contacto_adicional.telefono_contacto"
-                id="contacto_emergencia_telefono"
-                mask="999-9999999"
-                placeholder="xxx-xxxxxx"
-                size="small"
-                :class="{ 'p-invalid': errors.datos_contacto_adicional.telefono_contacto }"
-                fluid
-              />
+              <InputMask v-model="form.datos_contacto_adicional.telefono_contacto" id="contacto_emergencia_telefono"
+                mask="999-9999999" placeholder="xxx-xxxxxx" size="small"
+                :class="{ 'p-invalid': errors.datos_contacto_adicional.telefono_contacto }" fluid />
             </IconField>
             <label for="contacto_emergencia_telefono">Teléfono contacto de emergencia</label>
           </FloatLabel>
@@ -1447,14 +1290,9 @@ onMounted(() => {
         <div class="p-field w-full">
           <FloatLabel variant="in">
             <IconField class="w-full">
-              <Select
-                id="option"
-                v-model="form.datos_personales.parentesco_contacto"
-                :options="lista_parentesco_familiar"
-                optionLabel="label"
-                :class="{ 'p-invalid': errors.datos_personales.parentesco_contacto }"
-                fluid
-              />
+              <Select id="option" v-model="form.datos_personales.parentesco_contacto"
+                :options="lista_parentesco_familiar" optionLabel="label"
+                :class="{ 'p-invalid': errors.datos_personales.parentesco_contacto }" fluid />
               <label for="contacto_emergencia_relacion">Relación contacto de emergencia</label>
             </IconField>
           </FloatLabel>
@@ -1467,14 +1305,9 @@ onMounted(() => {
         <div class="p-field w-full">
           <FloatLabel variant="in">
             <IconField>
-              <InputText
-                v-model="form.datos_postulacion.nombre_empresa"
-                placeholder="Nombre de la empresa"
-                id="nombre_empresa"
-                size="small"
-                :class="{ 'p-invalid': errors.datos_postulacion.nombre_empresa }"
-                fluid
-              />
+              <InputText v-model="form.datos_postulacion.nombre_empresa" placeholder="Nombre de la empresa"
+                id="nombre_empresa" size="small" :class="{ 'p-invalid': errors.datos_postulacion.nombre_empresa }"
+                fluid />
             </IconField>
             <label for="nombre_empresa">Nombre de la empresa</label>
           </FloatLabel>
@@ -1483,14 +1316,9 @@ onMounted(() => {
         <div class="p-field w-full">
           <FloatLabel variant="in">
             <IconField>
-              <InputText
-                v-model="form.datos_postulacion.cargo_postulado"
-                placeholder="Cargo postulado"
-                id="cargo_postulado"
-                size="small"
-                :class="{ 'p-invalid': errors.datos_postulacion.cargo_postulado }"
-                fluid
-              />
+              <InputText v-model="form.datos_postulacion.cargo_postulado" placeholder="Cargo postulado"
+                id="cargo_postulado" size="small" :class="{ 'p-invalid': errors.datos_postulacion.cargo_postulado }"
+                fluid />
             </IconField>
             <label for="cargo_postulado">Cargo postulado</label>
           </FloatLabel>
@@ -1503,14 +1331,8 @@ onMounted(() => {
         <div class="p-field w-full">
           <FloatLabel variant="in">
             <IconField>
-              <InputText
-                v-model="form.tallas.calzado"
-                placeholder="Talla de calzado"
-                id="calzado"
-                size="small"
-                :class="{ 'p-invalid': errors.tallas.calzado }"
-                fluid
-              />
+              <InputText v-model="form.tallas.calzado" placeholder="Talla de calzado" id="calzado" size="small"
+                :class="{ 'p-invalid': errors.tallas.calzado }" fluid />
             </IconField>
             <label for="calzado">Talla de calzado</label>
           </FloatLabel>
@@ -1519,14 +1341,8 @@ onMounted(() => {
         <div class="p-field w-full">
           <FloatLabel variant="in">
             <IconField>
-              <InputText
-                v-model="form.tallas.pantalon"
-                placeholder="Talla de pantalón"
-                id="pantalon"
-                size="small"
-                :class="{ 'p-invalid': errors.tallas.pantalon }"
-                fluid
-              />
+              <InputText v-model="form.tallas.pantalon" placeholder="Talla de pantalón" id="pantalon" size="small"
+                :class="{ 'p-invalid': errors.tallas.pantalon }" fluid />
             </IconField>
             <label for="pantalon">Talla de pantalón</label>
           </FloatLabel>
@@ -1535,14 +1351,8 @@ onMounted(() => {
         <div class="p-field w-full">
           <FloatLabel variant="in">
             <IconField>
-              <InputText
-                v-model="form.tallas.camisa"
-                placeholder="Talla de camisa"
-                id="camisa"
-                size="small"
-                :class="{ 'p-invalid': errors.tallas.camisa }"
-                fluid
-              />
+              <InputText v-model="form.tallas.camisa" placeholder="Talla de camisa" id="camisa" size="small"
+                :class="{ 'p-invalid': errors.tallas.camisa }" fluid />
             </IconField>
             <label for="camisa">Talla de camisa</label>
           </FloatLabel>
@@ -1551,14 +1361,8 @@ onMounted(() => {
         <div class="p-field w-full">
           <FloatLabel variant="in">
             <IconField>
-              <InputText
-                v-model="form.tallas.estatura"
-                placeholder="Estatura"
-                id="estatura"
-                size="small"
-                :class="{ 'p-invalid': errors.tallas.estatura }"
-                fluid
-              />
+              <InputText v-model="form.tallas.estatura" placeholder="Estatura" id="estatura" size="small"
+                :class="{ 'p-invalid': errors.tallas.estatura }" fluid />
             </IconField>
             <label for="estatura">Estatura</label>
           </FloatLabel>
@@ -1567,14 +1371,8 @@ onMounted(() => {
         <div class="p-field w-full">
           <FloatLabel variant="in">
             <IconField>
-              <InputText
-                v-model="form.tallas.peso"
-                placeholder="Peso"
-                id="peso"
-                size="small"
-                :class="{ 'p-invalid': errors.tallas.peso }"
-                fluid
-              />
+              <InputText v-model="form.tallas.peso" placeholder="Peso" id="peso" size="small"
+                :class="{ 'p-invalid': errors.tallas.peso }" fluid />
             </IconField>
             <label for="peso">Peso</label>
           </FloatLabel>
@@ -1583,35 +1381,20 @@ onMounted(() => {
     </Panel>
 
     <template #footer>
-      <Button
-        label="Cerrar"
-        icon="pi pi-times"
-        severity="secondary"
-        outlined
-        @click="visible_datos_personales = false"
-      />
+      <Button label="Cerrar" icon="pi pi-times" severity="secondary" outlined
+        @click="visible_datos_personales = false" />
     </template>
   </Dialog>
 
   <!-- Modal Experiencia Laboral -->
-  <Dialog
-    v-model:visible="visible_experiencia"
-    modal
-    header="Editar Informacion de Experiencia Laboral"
-    :data="form.experiencia_laboral[dialogIndex]"
-    :style="{ width: '75rem' }"
-  >
+  <Dialog v-model:visible="visible_experiencia" modal header="Editar Informacion de Experiencia Laboral"
+    :data="form.experiencia_laboral[dialogIndex]" :style="{ width: '75rem' }">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <InputText
-              v-model="form.experiencia_laboral[dialogIndex].nombre_empresa"
-              id="nombre_empresa"
-              size="small"
-              :class="{ 'p-invalid': errors.experiencia_laboral.nombre_empresa }"
-              fluid
-            />
+            <InputText v-model="form.experiencia_laboral[dialogIndex].nombre_empresa" id="nombre_empresa" size="small"
+              :class="{ 'p-invalid': errors.experiencia_laboral.nombre_empresa }" fluid />
           </IconField>
           <label for="nombre_empresa">Nombre de la empresa</label>
         </FloatLabel>
@@ -1620,13 +1403,8 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <InputText
-              v-model="form.experiencia_laboral[dialogIndex].cargo"
-              id="cargo"
-              size="small"
-              :class="{ 'p-invalid': errors.experiencia_laboral.cargo }"
-              fluid
-            />
+            <InputText v-model="form.experiencia_laboral[dialogIndex].cargo" id="cargo" size="small"
+              :class="{ 'p-invalid': errors.experiencia_laboral.cargo }" fluid />
           </IconField>
           <label for="cargo">Cargo</label>
         </FloatLabel>
@@ -1635,13 +1413,8 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <InputText
-              v-model="form.experiencia_laboral[dialogIndex].nombre_jefe"
-                id="nombre_jefe"
-              size="small"
-              :class="{ 'p-invalid': errors.experiencia_laboral.nombre_jefe }"
-              fluid
-            />
+            <InputText v-model="form.experiencia_laboral[dialogIndex].nombre_jefe" id="nombre_jefe" size="small"
+              :class="{ 'p-invalid': errors.experiencia_laboral.nombre_jefe }" fluid />
           </IconField>
           <label for="nombre_jefe">Nombre del jefe</label>
         </FloatLabel>
@@ -1650,13 +1423,8 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <InputText
-              v-model="form.experiencia_laboral[dialogIndex].telefono_jefe"
-                id="telefono_jefe"
-              size="small"
-              :class="{ 'p-invalid': errors.experiencia_laboral.telefono_jefe }"
-              fluid
-            />
+            <InputText v-model="form.experiencia_laboral[dialogIndex].telefono_jefe" id="telefono_jefe" size="small"
+              :class="{ 'p-invalid': errors.experiencia_laboral.telefono_jefe }" fluid />
           </IconField>
           <label for="telefono_jefe">Telefono del jefe</label>
         </FloatLabel>
@@ -1665,13 +1433,8 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <InputText
-              v-model="form.experiencia_laboral[dialogIndex].salario_anterior"
-              id="salario_anterior"
-              size="small"
-              :class="{ 'p-invalid': errors.experiencia_laboral.salario_anterior }"
-              fluid
-            />
+            <InputText v-model="form.experiencia_laboral[dialogIndex].salario_anterior" id="salario_anterior"
+              size="small" :class="{ 'p-invalid': errors.experiencia_laboral.salario_anterior }" fluid />
           </IconField>
           <label for="salario_anterior">Salario</label>
         </FloatLabel>
@@ -1680,18 +1443,10 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <Select
-              id="actual"
-              class="w-full"
-              v-model="form.experiencia_laboral[dialogIndex].actual"
-              :options="[
-                { label: 'Sí', value: true },
-                { label: 'No', value: false },
-              ]"
-              optionLabel="label"
-              :class="{ 'p-invalid': errors.experiencia_laboral.actual }"
-              fluid
-            />
+            <Select id="actual" class="w-full" v-model="form.experiencia_laboral[dialogIndex].actual" :options="[
+              { label: 'Sí', value: true },
+              { label: 'No', value: false },
+            ]" optionLabel="label" :class="{ 'p-invalid': errors.experiencia_laboral.actual }" fluid />
           </IconField>
           <label for="actual">¿Actualmente trabaja aquí?</label>
         </FloatLabel>
@@ -1700,13 +1455,8 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <DatePicker
-              v-model="form.experiencia_laboral[dialogIndex].fecha_inicio"
-              view="month"
-              dateFormat="mm/yy"
-              showIcon
-              fluid
-            />
+            <DatePicker v-model="form.experiencia_laboral[dialogIndex].fecha_inicio" view="month" dateFormat="mm/yy"
+              showIcon fluid />
           </IconField>
           <label for="fecha_inicio">Fecha de inicio</label>
         </FloatLabel>
@@ -1715,13 +1465,8 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <DatePicker
-              v-model="form.experiencia_laboral[dialogIndex].fecha_fin"
-              view="month"
-              dateFormat="mm/yy"
-              showIcon
-              fluid
-            />
+            <DatePicker v-model="form.experiencia_laboral[dialogIndex].fecha_fin" view="month" dateFormat="mm/yy"
+              showIcon fluid />
           </IconField>
           <label for="fecha_fin">Fecha de fin</label>
         </FloatLabel>
@@ -1729,50 +1474,28 @@ onMounted(() => {
 
       <div class="p-field w-full md:col-span-4">
         <FloatLabel variant="in">
-          <Textarea
-            class="w-full"
-            v-model="form.experiencia_laboral[dialogIndex].funciones"
-            rows="5"
-            cols="30"
-            fluid
-          />
+          <Textarea class="w-full" v-model="form.experiencia_laboral[dialogIndex].funciones" rows="5" cols="30" fluid />
           <label for="funciones">Funciones</label>
         </FloatLabel>
       </div>
     </div>
 
     <template #footer>
-      <Button
-        label="Cerrar"
-        icon="pi pi-times"
-        severity="secondary"
-        outlined
-        @click="limpiarArregloLaboral(dialogIndex)"
-      />
+      <Button label="Cerrar" icon="pi pi-times" severity="secondary" outlined
+        @click="limpiarArregloLaboral(dialogIndex)" />
     </template>
   </Dialog>
 
   <!-- Modal Educación, Estudios -->
-  <Dialog
-    v-model:visible="visible_educacion"
-    modal
-    header="Editar Informacion Estudios"
-    :data="form.estudios[dialogIndexEstudio]"
-    :style="{ width: '75rem' }"
-  >
+  <Dialog v-model:visible="visible_educacion" modal header="Editar Informacion Estudios"
+    :data="form.estudios[dialogIndexEstudio]" :style="{ width: '75rem' }">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <Select
-              id="nivel"
-              class="w-full"
-              v-model="form.estudios[dialogIndexEstudio].nivel"
-              :options="lista_nivel_estudio"
-              optionLabel="label"
-              :class="{ 'p-invalid': errors.estudios.nivel }"
-              fluid
-            />
+            <Select id="nivel" class="w-full" v-model="form.estudios[dialogIndexEstudio].nivel"
+              :options="lista_nivel_estudio" optionLabel="label" :class="{ 'p-invalid': errors.estudios.nivel }"
+              fluid />
           </IconField>
           <label for="nivel">Nivel de estudio</label>
         </FloatLabel>
@@ -1781,14 +1504,8 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <InputText
-              v-model="form.estudios[dialogIndexEstudio].nombre"
-              placeholder="Nombre de Institucion"
-              id="nombre"
-              size="small"
-              :class="{ 'p-invalid': errors.estudios.nombre }"
-              fluid
-            />
+            <InputText v-model="form.estudios[dialogIndexEstudio].nombre" placeholder="Nombre de Institucion"
+              id="nombre" size="small" :class="{ 'p-invalid': errors.estudios.nombre }" fluid />
           </IconField>
           <label for="nombre">Institucion</label>
         </FloatLabel>
@@ -1797,15 +1514,9 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <Select
-              id="actual"
-              class="w-full"
-              v-model="form.estudios[dialogIndexEstudio].actual"
-              :options="lista_estado_estudio"
-              optionLabel="label"
-              :class="{ 'p-invalid': errors.estudios.actual }"
-              fluid
-            />
+            <Select id="actual" class="w-full" v-model="form.estudios[dialogIndexEstudio].actual"
+              :options="lista_estado_estudio" optionLabel="label" :class="{ 'p-invalid': errors.estudios.actual }"
+              fluid />
           </IconField>
           <label for="actual">Estado Estudio</label>
         </FloatLabel>
@@ -1814,15 +1525,9 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <Select
-              id="modalidad"
-              class="w-full"
-              v-model="form.estudios[dialogIndexEstudio].modalidad"
-              :options="lista_modalidad_estudio"
-              optionLabel="label"
-              :class="{ 'p-invalid': errors.estudios.modalidad }"
-              fluid
-            />
+            <Select id="modalidad" class="w-full" v-model="form.estudios[dialogIndexEstudio].modalidad"
+              :options="lista_modalidad_estudio" optionLabel="label" :class="{ 'p-invalid': errors.estudios.modalidad }"
+              fluid />
           </IconField>
           <label for="modalidad">Modalidad de estudio</label>
         </FloatLabel>
@@ -1831,13 +1536,8 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <DatePicker
-              v-model="form.estudios[dialogIndexEstudio].fecha_inicio"
-              view="month"
-              dateFormat="mm/yy"
-              showIcon
-              fluid
-            />
+            <DatePicker v-model="form.estudios[dialogIndexEstudio].fecha_inicio" view="month" dateFormat="mm/yy"
+              showIcon fluid />
           </IconField>
           <label for="fecha_inicio">Fecha de inicio</label>
         </FloatLabel>
@@ -1846,13 +1546,8 @@ onMounted(() => {
       <div class="p-field w-full">
         <FloatLabel variant="in">
           <IconField>
-            <DatePicker
-              v-model="form.estudios[dialogIndexEstudio].fecha_fin"
-              view="month"
-              dateFormat="mm/yy"
-              showIcon
-              fluid
-            />
+            <DatePicker v-model="form.estudios[dialogIndexEstudio].fecha_fin" view="month" dateFormat="mm/yy" showIcon
+              fluid />
           </IconField>
           <label for="fecha_fin">Fecha de fin</label>
         </FloatLabel>
@@ -1860,40 +1555,24 @@ onMounted(() => {
     </div>
 
     <template #footer>
-      <Button
-        label="Cerrar"
-        icon="pi pi-times"
-        severity="secondary"
-        outlined
-        @click="limpiarArregloEducacion(dialogIndexEstudio)"
-      />
+      <Button label="Cerrar" icon="pi pi-times" severity="secondary" outlined
+        @click="limpiarArregloEducacion(dialogIndexEstudio)" />
     </template>
   </Dialog>
 
   <!-- Modal Sagrilaft  -->
-  <Dialog
-    v-model:visible="visible_sagrilaft"
-    modal
-    header="Editar Informacion."
-    :data="form.sagrilaft"
-    :style="{ width: '90rem' }"
-  >
+  <Dialog v-model:visible="visible_sagrilaft" modal header="Editar Informacion." :data="form.sagrilaft"
+    :style="{ width: '90rem' }">
     <div class="w-full">
       <Panel header="operaciones internacionales">
         <div class="grid lg:grid-cols-5 md:grid-cols-4 gap-2 justify-items-center">
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
-                  v-model="form.sagrilaft.operaciones_internacionales.moneda_extgranjera_sn"
-                  :options="opcion_sn"
-                  optionLabel="label"
-                  :class="{
+                <Select id="option" v-model="form.sagrilaft.operaciones_internacionales.moneda_extgranjera_sn"
+                  :options="opcion_sn" optionLabel="label" :class="{
                     'p-invalid': errors.sagrilaft.operaciones_internacionales.moneda_extgranjera_sn,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="moneda_extgranjera_sn">Moneda extranjera</label>
             </FloatLabel>
@@ -1902,15 +1581,9 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
-                  editable
-                  v-model="form.sagrilaft.operaciones_internacionales.tipo_moneda"
-                  :options="opcion_tipo_moneda"
-                  optionLabel="label"
-                  :class="{ 'p-invalid': errors.sagrilaft.operaciones_internacionales.tipo_moneda }"
-                  fluid
-                />
+                <Select id="option" editable v-model="form.sagrilaft.operaciones_internacionales.tipo_moneda"
+                  :options="opcion_tipo_moneda" optionLabel="label"
+                  :class="{ 'p-invalid': errors.sagrilaft.operaciones_internacionales.tipo_moneda }" fluid />
               </IconField>
               <label for="tipo_moneda">Tipo de moneda</label>
             </FloatLabel>
@@ -1919,17 +1592,10 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
-                  editable
-                  v-model="form.sagrilaft.operaciones_internacionales.tipo_operacion"
-                  :options="opcion_tipo_operacion_moneda"
-                  optionLabel="label"
-                  :class="{
+                <Select id="option" editable v-model="form.sagrilaft.operaciones_internacionales.tipo_operacion"
+                  :options="opcion_tipo_operacion_moneda" optionLabel="label" :class="{
                     'p-invalid': errors.sagrilaft.operaciones_internacionales.tipo_operacion,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="tipo_operacion">Tipo de operación</label>
             </FloatLabel>
@@ -1938,44 +1604,27 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
-                  v-model="form.sagrilaft.operaciones_internacionales.productos_financieros_sn"
-                  :options="opcion_sn"
-                  optionLabel="label"
-                  :class="{
+                <Select id="option" v-model="form.sagrilaft.operaciones_internacionales.productos_financieros_sn"
+                  :options="opcion_sn" optionLabel="label" :class="{
                     'p-invalid': errors.sagrilaft.operaciones_internacionales.productos_financieros_sn,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="productos_financieros_sn">Productos financieros</label>
             </FloatLabel>
           </div>
 
-          <div
-            class="p-field w-full col-span-6"
-            v-if="form.sagrilaft.operaciones_internacionales.productos_financieros_sn.value === 'SI'"
-          >
-            <DataTable
-              :value="data_entidad_financiera"
-              editMode="cell"
-              @cell-edit-complete="onCellEditComplete"
-              :pt="{
-                table: { style: 'min-width: 50rem' },
-                column: {
-                  bodycell: ({ state }) => ({
-                    class: [{ '!py-0': state['d_editing'] }],
-                  }),
-                },
-              }"
-            >
-              <Column
-                v-for="col of columns_entidad_financiera"
-                :key="col.field"
-                :field="col.field"
-                :header="col.header"
-              >
+          <div class="p-field w-full col-span-6"
+            v-if="form.sagrilaft.operaciones_internacionales.productos_financieros_sn.value === 'SI'">
+            <DataTable :value="data_entidad_financiera" editMode="cell" @cell-edit-complete="onCellEditComplete" :pt="{
+              table: { style: 'min-width: 50rem' },
+              column: {
+                bodycell: ({ state }) => ({
+                  class: [{ '!py-0': state['d_editing'] }],
+                }),
+              },
+            }">
+              <Column v-for="col of columns_entidad_financiera" :key="col.field" :field="col.field"
+                :header="col.header">
                 <template #body="{ data, field }">
                   {{ field === 'numero_producto' ? formatCurrency(data[field]) : data[field] }}
                 </template>
@@ -1991,41 +1640,31 @@ onMounted(() => {
             </DataTable>
           </div>
 
+
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
+                <Select id="option"
                   v-model="form.sagrilaft.operaciones_internacionales.contrato_servidor_publico_extranjero_sn"
-                  :options="opcion_sn"
-                  optionLabel="label"
-                  :class="{
+                  :options="opcion_sn" optionLabel="label" :class="{
                     'p-invalid': errors.sagrilaft.operaciones_internacionales.contrato_servidor_publico_extranjero_sn,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
-              <label for="contrato_servidor_publico_extranjero_sn">Contrato servidor público E.</label>
+              <label for="contrato_servidor_publico_extranjero_sn">servidor público E.</label>
             </FloatLabel>
           </div>
 
-          <div
-            class="p-field w-full"
-            v-if="form.sagrilaft.operaciones_internacionales.contrato_servidor_publico_extranjero_sn.value === 'SI'"
-          >
+          <div class="p-field w-full"
+            v-if="form.sagrilaft.operaciones_internacionales.contrato_servidor_publico_extranjero_sn.value === 'SI'">
             <FloatLabel variant="in">
               <IconField>
                 <InputText
                   v-model="form.sagrilaft.operaciones_internacionales.contrato_servidor_publico_extranjero_detalles"
-                  placeholder="Contrato servidor público E."
-                  id="contrato_servidor_publico_extranjero_detalles"
-                  size="small"
-                  :class="{
+                  placeholder="Contrato servidor público E." id="contrato_servidor_publico_extranjero_detalles"
+                  size="small" :class="{
                     'p-invalid':
                       errors.sagrilaft.operaciones_internacionales.contrato_servidor_publico_extranjero_detalles,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="contrato_servidor_publico_extranjero_detalles">Contrato servidor público E. D. </label>
             </FloatLabel>
@@ -2033,22 +1672,14 @@ onMounted(() => {
         </div>
       </Panel>
 
-      <Panel header="informacion financiera">
+      <Panel header="Informacion financiera">
         <div class="grid grid-cols-2 gap-2 justify-items-center">
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <InputNumber
-                  v-model="form.sagrilaft.informacion_financiera.total_activos"
-                  id="total_activos"
-                  mode="currency"
-                  size="small"
-                  currency="USD"
-                  locale="en-US"
-                  :class="{ 'p-invalid': errors.sagrilaft.informacion_financiera.total_activos }"
-                  autofocus
-                  fluid
-                />
+                <InputNumber v-model="form.sagrilaft.informacion_financiera.total_activos" id="total_activos"
+                  mode="currency" size="small" currency="USD" locale="en-US"
+                  :class="{ 'p-invalid': errors.sagrilaft.informacion_financiera.total_activos }" autofocus fluid />
               </IconField>
               <label for="total_activos">Total activos</label>
             </FloatLabel>
@@ -2057,18 +1688,10 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <InputNumber
-                  v-model="form.sagrilaft.informacion_financiera.total_ingresos_mensuales"
-                  id="total_ingresos_mensuales"
-                  size="small"
-                  mode="currency"
-                  currency="USD"
-                  locale="en-US"
-                  :class="{
+                <InputNumber v-model="form.sagrilaft.informacion_financiera.total_ingresos_mensuales"
+                  id="total_ingresos_mensuales" size="small" mode="currency" currency="USD" locale="en-US" :class="{
                     'p-invalid': errors.sagrilaft.informacion_financiera.total_ingresos_mensuales,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="total_ingresos_mensuales">Total ingresos mensuales</label>
             </FloatLabel>
@@ -2077,16 +1700,9 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <InputNumber
-                  v-model="form.sagrilaft.informacion_financiera.total_pasivos"
-                  id="total_pasivos"
-                  size="small"
-                  mode="currency"
-                  currency="USD"
-                  locale="en-US"
-                  :class="{ 'p-invalid': errors.sagrilaft.informacion_financiera.total_pasivos }"
-                  fluid
-                />
+                <InputNumber v-model="form.sagrilaft.informacion_financiera.total_pasivos" id="total_pasivos"
+                  size="small" mode="currency" currency="USD" locale="en-US"
+                  :class="{ 'p-invalid': errors.sagrilaft.informacion_financiera.total_pasivos }" fluid />
               </IconField>
               <label for="total_pasivos">Total pasivos</label>
             </FloatLabel>
@@ -2094,18 +1710,10 @@ onMounted(() => {
 
           <div class="p-field w-full">
             <FloatLabel variant="in">
-              <InputText
-                v-model="form.sagrilaft.informacion_financiera.otro_ingresos_mensuales"
-                id="otro_ingresos_mensuales"
-                size="small"
-                mode="currency"
-                currency="USD"
-                locale="en-US"
-                :class="{
+              <InputText v-model="form.sagrilaft.informacion_financiera.otro_ingresos_mensuales"
+                id="otro_ingresos_mensuales" size="small" mode="currency" currency="USD" locale="en-US" :class="{
                   'p-invalid': errors.sagrilaft.informacion_financiera.otro_ingresos_mensuales,
-                }"
-                fluid
-              />
+                }" fluid />
 
               <label for="otro_ingresos_mensuales">Otros ingresos mensuales</label>
             </FloatLabel>
@@ -2114,17 +1722,10 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <InputNumber
-                  v-model="form.sagrilaft.informacion_financiera.total_patrimonio"
-                  placeholder="Total patrimonio"
-                  id="total_patrimonio"
-                  size="small"
-                  mode="currency"
-                  currency="USD"
-                  locale="en-US"
-                  :class="{ 'p-invalid': errors.sagrilaft.informacion_financiera.total_patrimonio }"
-                  fluid
-                />
+                <InputNumber v-model="form.sagrilaft.informacion_financiera.total_patrimonio"
+                  placeholder="Total patrimonio" id="total_patrimonio" size="small" mode="currency" currency="USD"
+                  locale="en-US" :class="{ 'p-invalid': errors.sagrilaft.informacion_financiera.total_patrimonio }"
+                  fluid />
               </IconField>
               <label for="total_patrimonio">Total patrimonio</label>
             </FloatLabel>
@@ -2133,16 +1734,10 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <InputNumber
-                  v-model="form.sagrilaft.informacion_financiera.otro_egresos_mensuales"
-                  placeholder="Otros egresos mensuales"
-                  id="otro_egresos_mensuales"
-                  size="small"
-                  :class="{
+                <InputNumber v-model="form.sagrilaft.informacion_financiera.otro_egresos_mensuales"
+                  placeholder="Otros egresos mensuales" id="otro_egresos_mensuales" size="small" :class="{
                     'p-invalid': errors.sagrilaft.informacion_financiera.otro_egresos_mensuales,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="otro_egresos_mensuales">Otros egresos mensuales</label>
             </FloatLabel>
@@ -2151,13 +1746,8 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <DatePicker
-                  v-model="form.sagrilaft.informacion_financiera.fecha_corte"
-                  dateFormat="yy-mm-dd"
-                  size="small"
-                  showIcon
-                  fluid
-                />
+                <DatePicker v-model="form.sagrilaft.informacion_financiera.fecha_corte" dateFormat="yy-mm-dd"
+                  size="small" showIcon fluid />
               </IconField>
               <label for="fecha_corte">Fecha corte</label>
             </FloatLabel>
@@ -2166,19 +1756,11 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.sagrilaft.informacion_financiera.otro_ingresos_detalle"
-                  placeholder="Otros ingresos detalle"
-                  id="otro_ingresos_detalle"
-                  size="small"
-                  mode="currency"
-                  currency="USD"
-                  locale="en-US"
-                  :class="{
+                <InputText v-model="form.sagrilaft.informacion_financiera.otro_ingresos_detalle"
+                  placeholder="Otros ingresos detalle" id="otro_ingresos_detalle" size="small" mode="currency"
+                  currency="USD" locale="en-US" :class="{
                     'p-invalid': errors.sagrilaft.informacion_financiera.otro_ingresos_detalle,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="otro_ingresos_detalle">Detalle de otros ingresos </label>
             </FloatLabel>
@@ -2186,21 +1768,16 @@ onMounted(() => {
         </div>
       </Panel>
 
-      <Panel header="personas expuestas politicamente">
+      <Panel header="Personas expuestas politicamente">
         <div class="grid grid-cols-4 gap-2 justify-items-center">
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
+                <Select id="option"
                   v-model="form.sagrilaft.personas_expuestas_politicamente.maneja_recursos_publicos_sn"
-                  :options="opcion_sn"
-                  optionLabel="label"
-                  :class="{
+                  :options="opcion_sn" optionLabel="label" :class="{
                     'p-invalid': errors.sagrilaft.personas_expuestas_politicamente.maneja_recursos_publicos_sn,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="maneja_recursos_publicos_sn">Maneja recursos publicos</label>
             </FloatLabel>
@@ -2209,37 +1786,23 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
-                  v-model="form.sagrilaft.personas_expuestas_politicamente.cargo_publico_sn"
-                  :options="opcion_sn"
-                  optionLabel="label"
-                  :class="{
+                <Select id="option" v-model="form.sagrilaft.personas_expuestas_politicamente.cargo_publico_sn"
+                  :options="opcion_sn" optionLabel="label" :class="{
                     'p-invalid': errors.sagrilaft.personas_expuestas_politicamente.cargo_publico_sn,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="cargo_publico_sn">Tiene o ha tenido cargo publico</label>
             </FloatLabel>
           </div>
 
-          <div
-            class="p-field w-full"
-            v-if="form.sagrilaft.personas_expuestas_politicamente.cargo_publico_sn.value === 'SI'"
-          >
+          <div class="p-field w-full"
+            v-if="form.sagrilaft.personas_expuestas_politicamente.cargo_publico_sn.value === 'SI'">
             <FloatLabel variant="in">
               <IconField>
-                <InputText
-                  v-model="form.sagrilaft.personas_expuestas_politicamente.cargo_publico_detalle"
-                  placeholder="Familia considerada PEP"
-                  id="familia_considerada_pep_sn"
-                  size="small"
-                  :class="{
+                <InputText v-model="form.sagrilaft.personas_expuestas_politicamente.cargo_publico_detalle"
+                  placeholder="Familia considerada PEP" id="familia_considerada_pep_sn" size="small" :class="{
                     'p-invalid': errors.sagrilaft.personas_expuestas_politicamente.cargo_publico_detalle,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="cargo_publico_sn">Cual cargo publico</label>
             </FloatLabel>
@@ -2248,50 +1811,33 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
+                <Select id="option"
                   v-model="form.sagrilaft.personas_expuestas_politicamente.goza_reconoscimiento_publico_sn"
-                  :options="opcion_sn"
-                  optionLabel="label"
-                  :class="{
+                  :options="opcion_sn" optionLabel="label" :class="{
                     'p-invalid': errors.sagrilaft.personas_expuestas_politicamente.goza_reconoscimiento_publico_sn,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="goza_reconoscimiento_publico_sn">Goza reconocimiento publico</label>
             </FloatLabel>
           </div>
 
-          <div
-            class="p-field w-full"
-            v-if="form.sagrilaft.personas_expuestas_politicamente.goza_reconoscimiento_publico_sn.value === 'SI'"
-          >
+          <div class="p-field w-full"
+            v-if="form.sagrilaft.personas_expuestas_politicamente.goza_reconoscimiento_publico_sn.value === 'SI'">
             <FloatLabel variant="in">
               <IconField>
-                <DatePicker
-                  v-model="form.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento"
-                  dateFormat="yy-mm-dd"
-                  showIcon
-                  fluid
-                />
+                <DatePicker v-model="form.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento"
+                  dateFormat="yy-mm-dd" showIcon fluid />
               </IconField>
               <label for="fecha_desde_reconocimiento">Fecha desde reconocimiento</label>
             </FloatLabel>
           </div>
 
-          <div
-            class="p-field w-full"
-            v-if="form.sagrilaft.personas_expuestas_politicamente.goza_reconoscimiento_publico_sn.value === 'SI'"
-          >
+          <div class="p-field w-full"
+            v-if="form.sagrilaft.personas_expuestas_politicamente.goza_reconoscimiento_publico_sn.value === 'SI'">
             <FloatLabel variant="in">
               <IconField>
-                <DatePicker
-                  v-model="form.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento"
-                  dateFormat="yy-mm-dd"
-                  showIcon
-                  fluid
-                />
+                <DatePicker v-model="form.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento"
+                  dateFormat="yy-mm-dd" showIcon fluid />
               </IconField>
               <label for="fecha_hasta_reconocimiento">Fecha hasta reconocimiento</label>
             </FloatLabel>
@@ -2300,42 +1846,27 @@ onMounted(() => {
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <Select
-                  id="option"
-                  v-model="form.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_sn"
-                  :options="opcion_sn"
-                  optionLabel="label"
-                  :class="{
+                <Select id="option" v-model="form.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_sn"
+                  :options="opcion_sn" optionLabel="label" :class="{
                     'p-invalid': errors.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_sn,
-                  }"
-                  fluid
-                />
+                  }" fluid />
               </IconField>
               <label for="familia_considerada_pep_sn">Familia considerada PEP</label>
             </FloatLabel>
           </div>
 
-          <div
-            class="p-field w-full"
-            v-if="form.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_sn.value === 'SI'"
-          >
+          <div class="p-field w-full"
+            v-if="form.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_sn.value === 'SI'">
             <FloatLabel variant="in">
               <IconField>
                 <InputNumber
                   v-model="form.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_cantidad_persona"
-                  inputId="familia_considerada_pep_sn"
-                  :min="1"
-                  :max="5"
-                  showButtons
-                  buttonLayout="horizontal"
-                  :step="1"
-                  fluid
-                  @input="
+                  inputId="familia_considerada_pep_sn" :min="1" :max="5" showButtons buttonLayout="horizontal" :step="1"
+                  fluid @input="
                     createPepData(
                       form.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_cantidad_persona,
                     )
-                  "
-                >
+                    ">
                   <template #incrementbuttonicon>
                     <span class="pi pi-plus" />
                   </template>
@@ -2349,23 +1880,16 @@ onMounted(() => {
             </FloatLabel>
           </div>
 
-          <div
-            class="p-field col-span-4 w-full"
-            v-if="form.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_sn.value === 'SI'"
-          >
-            <DataTable
-              :value="data_pep_familiar"
-              editMode="cell"
-              @cell-edit-complete="onCellEditComplete"
-              :pt="{
-                table: { style: 'min-width: 50rem' },
-                column: {
-                  bodycell: ({ state }) => ({
-                    class: [{ '!py-0': state['d_editing'] }],
-                  }),
-                },
-              }"
-            >
+          <div class="p-field col-span-4 w-full"
+            v-if="form.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_sn.value === 'SI'">
+            <DataTable :value="data_pep_familiar" editMode="cell" @cell-edit-complete="onCellEditComplete" :pt="{
+              table: { style: 'min-width: 50rem' },
+              column: {
+                bodycell: ({ state }) => ({
+                  class: [{ '!py-0': state['d_editing'] }],
+                }),
+              },
+            }">
               <Column v-for="col of columns_pep" :key="col.field" :field="col.field" :header="col.header">
                 <template #body="{ data, field }">
                   {{ field === 'numero_producto' ? formatCurrency(data[field]) : data[field] }}
@@ -2383,6 +1907,26 @@ onMounted(() => {
           </div>
         </div>
       </Panel>
+
+      <Panel header="Declaracion de bienes y fondos">
+        <div class="grid grid-cols-1 gap-2 justify-items-center">
+          <div class="p-field w-full">
+            <FloatLabel variant="in">
+              <IconField>
+                <InputText v-model="form.sagrilaft.declaracion_origen_proveniente" optionLabel="label" :class="{
+                  'p-invalid': errors.sagrilaft.declaracion_origen_proveniente,
+                }" fluid />
+              </IconField>
+              <label for="declaracion_origen_proveniente">Declaración de origen Proveniente</label>
+            </FloatLabel>
+            <Message size="small" severity="secondary" variant="simple">Declaro que el origen de mis recursos proviene
+              del
+              desarrollo de la(s) siguiente(s) actividade(s).</Message>
+          </div>
+
+        </div>
+      </Panel>
+
     </div>
     <template #footer>
       <Button label="Cerrar" icon="pi pi-times" severity="secondary" outlined @click="visible_sagrilaft = false" />
@@ -2391,17 +1935,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.cards-container {
-  display: flex;
-  flex: 0 0 100%;
-  gap: 2.5rem;
-  justify-content: center;
-  align-items: center;
-  /* Cambiado de stretch a center */
-  margin: 0;
-  /* Elimina el margen vertical */
-  flex-wrap: wrap;
-}
+
 
 .p-floatlabel label {
   font-weight: 300;

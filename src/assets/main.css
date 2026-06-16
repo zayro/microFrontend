@@ -36,8 +36,6 @@ body {
 }
 
 .background-main {
-  overflow-x: hidden;
-  overflow-y: hidden;
   /* background-image: linear-gradient(#ffffffeb, #ffffffeb), url('@/assets/logotipo/LOGO_GU_TRANSPARENTE.png'); */
   background: linear-gradient(135deg, var(--p-surface-500, #e5e7eb) 0%, var(--p-surface-900, #225ba1) 100%);
   background-image: url('@/assets/img/background/polygon3.jpg');

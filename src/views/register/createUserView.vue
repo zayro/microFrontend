@@ -78,7 +78,7 @@ const [terms] = defineField('terms')
 const router = useRouter()
 
 const goRouteLogin = () => {
-  router.push({ name: 'default' })
+  router.push({ name: 'defaultView' })
 }
 
 const create = (values) => {
@@ -175,9 +175,9 @@ onMounted(() => {
           <div class="text-center mb-5">
             <Avatar :image="avatar_create" size="xlarge" class="mr-2" />
             <div class="text-900 text-3xl font-medium mb-3">Crear Usuario</div>
-            <span class="text-600 font-medium line-height-3">Register</span>
+            <span class="text-600 font-medium line-height-3">Registro</span>
             <a class="font-medium no-underline ml-2 text-blue-500 cursor-pointer" @click="goRouteLogin()"
-              >Go back to Login</a
+              >Volver a Iniciar Sesión</a
             >
           </div>
           <Form
@@ -257,7 +257,7 @@ onMounted(() => {
                 <Password
                   v-model="passwordConfirm"
                   class="w-full"
-                  placeholder="Repeat Password"
+                  placeholder="Repetir Password"
                   variant="filled"
                   :feedback="false"
                   toggle-mask
@@ -272,27 +272,16 @@ onMounted(() => {
 
             <div class="flex gap-2 mb-3">
               <Checkbox v-model="terms" :binary="true" />
-              <label for="checkbox" class="text-900 font-medium"> I have read the</label>
-              <a class="text-600 cursor-pointer hover:text-primary cursor-pointer">Terms and Conditions</a>
+              <label for="checkbox" class="text-900 font-medium"> He leído los</label>
+              <a class="text-600 cursor-pointer hover:text-primary cursor-pointer">Términos y Condiciones</a>
             </div>
 
             <div class="flex gap-2 mb-3">
               <div class="flex w-full Message">
-                <Button type="submit" label="Sign Up" class="w-full"></Button>
+                <Button type="submit" label="Registrarse" class="w-full"></Button>
               </div>
             </div>
 
-            <div class="flex gap-2 mb-3">
-              <span class="font-medium text-600"
-                >Already have an account?
-                <a
-                  class="font-semibold cursor-pointer text-900 hover:text-primary transition-colors transition-duration-300"
-                  @click="goRouteLogin()"
-                >
-                  Login
-                </a>
-              </span>
-            </div>
           </Form>
         </template>
       </Card>
