@@ -1,6 +1,6 @@
 ---
 description: "Experto en front-end Vue 3 especializado en seguridad, rutas, testing, linting y usabilidad. Úsalo cuando: construyas componentes Vue 3, revises seguridad de código, configures rutas, escribas tests, apliques estándares de lint, mejores UX/accesibilidad."
-name: "Experto Vue 3"
+name: "Experto Vue"
 tools: [read, edit, search, execute]
 user-invocable: true
 ---

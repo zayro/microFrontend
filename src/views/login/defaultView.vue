@@ -55,10 +55,14 @@ const goRouteCreate = () => {
   router.push({ name: 'createUserView' })
 }
 
+const goRouteRestorePassword = () => {
+  router.push({ name: 'restorePasswordUserView' })
+}
+
 watch(data, (val) => {
   if (val) {
     console.log('Data changed:', val)
-    if(val.estado){
+    if (val.estado) {
       confStore.setToken(val.token)
       confStore.setUser({
         username: val.username,
@@ -92,8 +96,8 @@ watch(isError, (val) => {
 })
 
 onMounted(() => {
-  document.body.style.overflowX = 'hidden'
-  document.body.style.overflowY = 'hidden'
+  //document.body.style.overflowX = 'hidden'
+  //document.body.style.overflowY = 'hidden'1
   document.title = 'Login'
   document.documentElement.style.setProperty('--animate-duration', '.9s')
   //document.body.style.background = `url(${imgBodyBackGround})`
@@ -105,11 +109,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen items-center justify-between background-main transition-colors duration-300">
+  <div class="flex flex-col min-h-screen items-center justify-between background-main transition-colors duration-300 w-full">
     <div class="flex items-center justify-center flex-1 w-full">
       <Card
-        class="flex flex-col text-center py-8 px-6 rounded-2xl w-full max-w-md shadow-lg backdrop-blur-md bg-[var(--p-surface-card)] transition-colors duration-300"
-      >
+        class="flex flex-col text-center py-8 px-6 rounded-2xl w-full lg:w-[50%] md:w-[90%] sm:w-[100%] shadow-lg backdrop-blur-md bg-[var(--p-surface-card)] transition-colors duration-300">
         <template #content>
           <div v-if="showSessionPrompt">
             <div class="text-center mb-6">
@@ -123,14 +126,8 @@ onMounted(() => {
 
               <div class="flex flex-col gap-3">
                 <Button label="Continuar en sesión" icon="pi pi-arrow-right" class="w-full" @click="continueSession" />
-                <Button
-                  label="Cerrar sesión"
-                  icon="pi pi-sign-out"
-                  severity="secondary"
-                  outlined
-                  class="w-full"
-                  @click="closeSession"
-                />
+                <Button label="Cerrar sesión" icon="pi pi-sign-out" severity="secondary" outlined class="w-full"
+                  @click="closeSession" />
               </div>
             </div>
           </div>
@@ -150,46 +147,30 @@ onMounted(() => {
             <div class="flex items-center justify-center gap-3 mb-4">
               <IconField icon-position="left" class="w-full">
                 <InputIcon id="username" class="pi pi-user" />
-                <InputText
-                  v-model.trim="form.username"
-                  type="text"
-                  class="flex-auto w-full"
-                  placeholder="Username"
-                  variant="filled"
-                />
+                <InputText v-model.trim="form.username" type="text" class="flex-auto w-full" placeholder="Username"
+                  variant="filled" />
               </IconField>
             </div>
 
             <div class="flex items-center justify-center gap-3 mb-4">
               <IconField icon-position="left" class="w-full">
                 <InputIcon class="pi pi-lock" />
-                <InputText
-                  v-model.trim="form.password"
-                  type="password"
-                  class="flex-auto w-full"
-                  placeholder="Password"
-                  variant="filled"
-                />
+                <InputText v-model.trim="form.password" type="password" class="flex-auto w-full" placeholder="Password"
+                  variant="filled" />
               </IconField>
             </div>
 
             <div class="flex items-center justify-center gap-3 mb-4">
-              <Button
-                type="button"
-                label="Ingresar"
-                class="w-full"
-                :disabled="!validateForm"
-                @click="handleLogin(form)"
-              />
+              <Button type="button" label="Ingresar" class="w-full" :disabled="!validateForm"
+                @click="handleLogin(form)" />
             </div>
 
-            <div class="text-center mb-5">
-              <span class="font-medium text-600">
-                Crear un usuario si no tienes cuenta de acceso
-                <a class="font-medium no-underline ml-2 text-blue-500 cursor-pointer" @click="goRouteCreate()"
-                  >Click Aqui</a
-                >
-              </span>
+            <div class="grid lg:grid-cols-2 md:grid-cols-1 gap-2 mb-5">
+              <Button label="Registrarse" variant="outlined" icon="pi pi-user-plus" @click="goRouteCreate()" />
+
+              <Button label="Recuperar contraseña" variant="outlined" icon="pi pi-key" @click="goRouteRestorePassword()" />
+
+
             </div>
 
             <!-- <div class="flex items-center justify-center gap-2 mb-2">
@@ -205,6 +186,7 @@ onMounted(() => {
         </template>
       </Card>
     </div>
+
   </div>
 </template>
 

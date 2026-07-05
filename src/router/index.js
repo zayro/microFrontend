@@ -8,6 +8,7 @@ import NotFoundView from '@/views/404/404.vue'
 import DefaultView from '@/views/login/defaultView.vue'
 
 import createUserView from '@/views/register/createUserView.vue'
+import restorePasswordUserView from '@/views/register/restorePasswordUserView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,6 +28,11 @@ const router = createRouter({
       path: '/createUser',
       name: 'createUserView',
       component: createUserView,
+    },
+    {
+      path: '/restorePassword',
+      name: 'restorePasswordUserView',
+      component: restorePasswordUserView,
     },
     {
       path: '/hv',

@@ -26,7 +26,7 @@ import { BiFiletypePdf, BiFilePdf } from 'oh-vue-icons/icons/bi'
 // Themes
 import Aura from '@primeuix/themes/aura'
 
-import Material from '@primeuix/themes/material'
+// import Material from '@primeuix/themes/material'
 
 const Fa = Object.values({ ...FaIcons })
 const Bi = Object.values({ ...BiIcons })

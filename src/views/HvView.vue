@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, onMounted, onBeforeUnmount, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
@@ -17,6 +17,10 @@ import Column from 'primevue/column'
 import InputMask from 'primevue/inputmask'
 import Image from 'primevue/image'
 import Message from 'primevue/message'
+import ScrollPanel from 'primevue/scrollpanel';
+
+import ModernMenubar from '@/components/ModernMenubar.vue'
+
 
 import { useConfigStoreRef } from '@/stores/config'
 
@@ -320,6 +324,7 @@ const confirmarSalida = async () => {
         confirm: 'Continuar'
       },
     }).then((willExit) => {
+      onSubmitNoValidate()
       resolve(willExit)
     })
   })
@@ -430,6 +435,96 @@ function parseDate(dateStr) {
   return isNaN(d.getTime()) ? null : d
 }
 
+
+async function onSubmitNoValidate() {
+
+  submitted.value = true
+
+  try {
+    // Clonamos el objeto form de manera selectiva preservando las instancias de Date
+    // y evitando mutar el estado reactivo que está enlazado a los componentes de la UI (como DatePicker).
+    const formCopy = {
+      ...form,
+      datos_personales: { ...form.datos_personales },
+      sagrilaft: {
+        ...form.sagrilaft,
+        informacion_financiera: { ...form.sagrilaft.informacion_financiera },
+        personas_expuestas_politicamente: { ...form.sagrilaft.personas_expuestas_politicamente },
+      },
+      experiencia_laboral: form.experiencia_laboral.map((exp) => ({ ...exp })),
+      estudios: form.estudios.map((est) => ({ ...est })),
+    }
+
+    if (formCopy.datos_personales.fecha_documento_expedicion) {
+      formCopy.datos_personales.fecha_documento_expedicion = formatDate(formCopy.datos_personales.fecha_documento_expedicion)
+    }
+
+    if (formCopy.datos_personales.fecha_nacimiento) {
+      formCopy.datos_personales.fecha_nacimiento = formatDate(formCopy.datos_personales.fecha_nacimiento)
+    }
+
+    if (formCopy.sagrilaft.informacion_financiera.fecha_corte) {
+      formCopy.sagrilaft.informacion_financiera.fecha_corte = formatDate(
+        formCopy.sagrilaft.informacion_financiera.fecha_corte,
+      )
+    }
+
+    if (formCopy.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento) {
+      formCopy.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento = formatDate(
+        formCopy.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento,
+      )
+    }
+
+    if (formCopy.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento) {
+      formCopy.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento = formatDate(
+        formCopy.sagrilaft.personas_expuestas_politicamente.fecha_hasta_reconocimiento,
+      )
+    }
+
+    if (Array.isArray(formCopy.experiencia_laboral)) {
+      formCopy.experiencia_laboral.forEach((exp) => {
+        if (exp.fecha_inicio) {
+          exp.fecha_inicio = formatDate(exp.fecha_inicio)
+        }
+        if (exp.fecha_fin) {
+          exp.fecha_fin = formatDate(exp.fecha_fin)
+        }
+      })
+    }
+
+    if (Array.isArray(formCopy.estudios)) {
+      formCopy.estudios.forEach((est) => {
+        if (est.fecha_inicio) {
+          est.fecha_inicio = formatDate(est.fecha_inicio)
+        }
+        if (est.fecha_fin) {
+          est.fecha_fin = formatDate(est.fecha_fin)
+        }
+      })
+    }
+
+    const payload = {
+      identificacion: formCopy.datos_personales.numero_documento,
+      informacion: formCopy,
+    }
+
+    http()
+      .post('records/save', payload)
+      .then((response) => {
+        console.log(':rocket: ~ .then ~ response', response.data)
+        hasUnsavedChanges.value = false
+        swal('Se guardo!', 'Se ha guardado el registro!', 'success')
+      })
+      .catch((error) => {
+        console.log(error)
+        swal('Wrong!', 'Sucedio Error al guardar el registro!', 'error')
+      })
+  } catch (error) {
+    console.error('Error en la llamada de red:', error)
+    submitted.value = false
+  }
+
+}
 async function onSubmit() {
   if (validate()) {
     submitted.value = true
@@ -593,6 +688,15 @@ const closeSession = async () => {
   }
 }
 
+// Guard para detectar navegación (incluido botón atrás del navegador)
+onBeforeRouteLeave(async (to, from) => {
+  if (hasUnsavedChanges.value) {
+    const shouldExit = await confirmarSalida()
+    return shouldExit !== false
+  }
+  return true
+})
+
 // Watcher para detectar cambios en el formulario
 watch(
   form,
@@ -748,15 +852,21 @@ onMounted(() => {
 </script>
 
 <template>
+
   <div class="flex flex-row min-h-screen items-center justify-between background-main transition-colors duration-300 cards-container">
+
+
+    <ModernMenubar :title="'Bienvenido'" :currentTime="currentTime" :itemsBreadCrumb="items" />
+
+
     <div class="flex flex-col justify-start items-center w-full">
       <div class="card gap-3 mb-4 lg:w-[70%] md:w-[90%] sm:w-[100%]">
         <Panel class="p-panel-noborder">
           <template #header>
             <div class="flex flex-col items-center justify-center w-full gap-2">
-              <span class="font-bold text-shadow-sm uppercase font-mono">Instrucciones Inscripción Hoja de Vida </span>
+
               <Image :src="login" alt="Image" width="150" class="mx-auto mb-2" />
-              <strong>Usuario {{ user.value.identificacion }}</strong>
+
             </div>
           </template>
 
@@ -784,7 +894,7 @@ onMounted(() => {
             <!-- Datos Personales -->
             <div class="flex flex-col justify-start items-center w-full">
               <div class="card gap-3 mb-4 w-full">
-                <Panel class="p-panel-noborder" toggleable>
+                <Panel class="p-panel-noborder" toggleable :collapsed="true">
                   <template #header>
                     <div class="flex items-center gap-2">
                       <div>
@@ -837,7 +947,7 @@ onMounted(() => {
 
             <!-- Experiencia Laboral -->
             <div class="card gap-3 mb-4 w-full">
-              <Panel class="p-panel-noborder" toggleable>
+              <Panel class="p-panel-noborder" toggleable :collapsed="true">
                 <template #header>
                   <div class="flex items-center gap-2">
                     <strong class="font-bold">Experiencia laboral</strong>
@@ -890,7 +1000,7 @@ onMounted(() => {
 
             <!-- Estudios -->
             <div class="card gap-3 mb-4 w-full">
-              <Panel class="p-panel-noborder" toggleable>
+              <Panel class="p-panel-noborder" toggleable :collapsed="true">
                 <template #header>
                   <div class="flex items-center gap-2">
                     <strong class="font-bold">Estudios</strong>
@@ -944,7 +1054,7 @@ onMounted(() => {
 
             <!-- Sagrilaft -->
             <div class="card gap-3 mb-4 w-full">
-              <Panel class="p-panel-noborder" toggleable>
+              <Panel class="p-panel-noborder" toggleable :collapsed="true">
                 <template #header>
                   <div class="flex items-center gap-2">
                     <strong class="font-bold">Sagrilaft</strong>
@@ -981,404 +1091,412 @@ onMounted(() => {
   </Dialog>
 
   <!-- Modal Datos Basicos -->
-  <Dialog v-model:visible="visible_datos_personales" modal header="Editar Informacion Personal"
-    :data="form.datos_personales" :style="{ width: '75rem' }">
-    <Panel header="Datos Personales" class="p-panel-noborder">
-      <form @submit.prevent="onSubmit" novalidate>
-        <div class="grid lg:grid-cols-4 md:grid-cols-3 gap-2">
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.datos_personales.primer_nombre" placeholder="Primer nombre" id="primer_nombre"
-                  size="small" :class="{ 'p-invalid': errors.datos_personales.primer_nombre }" fluid />
-              </IconField>
-              <label for="primer_nombre">Primer nombre</label>
-            </FloatLabel>
-          </div>
+  <Dialog v-model:visible="visible_datos_personales" modal header="Editar Informacion Personal" :maximizable="true"
+    :closable="false" :breakpoints="{ '960px': '75vw', '640px': '90vw', '480px': '100vw' }"
+    :data="form.datos_personales">
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.datos_personales.segundo_nombre" placeholder="Segundo nombre"
-                  id="segundo_nombre" size="small" :class="{ 'p-invalid': errors.datos_personales.segundo_nombre }"
-                  fluid />
-              </IconField>
-              <label for="segundo_nombre">Segundo nombre</label>
-            </FloatLabel>
-          </div>
+    <ScrollPanel :style="{ width: '100%', height: '70vh' }">
+      <Panel header="Datos Personales" class="p-panel-noborder" :blockScroll="true">
+        <form @submit.prevent="onSubmit" novalidate>
+          <div class="grid lg:grid-cols-4 md:grid-cols-3 gap-2">
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.primer_nombre" placeholder="Primer nombre"
+                    id="primer_nombre" size="small" :class="{ 'p-invalid': errors.datos_personales.primer_nombre }"
+                    fluid />
+                </IconField>
+                <label for="primer_nombre">Primer nombre</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.datos_personales.primer_apellido" placeholder="Primer apellido"
-                  id="primer_apellido" size="small" :class="{ 'p-invalid': errors.datos_personales.primer_apellido }"
-                  fluid />
-              </IconField>
-              <label for="primer_apellido">Primer Apellido</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.segundo_nombre" placeholder="Segundo nombre"
+                    id="segundo_nombre" size="small" :class="{ 'p-invalid': errors.datos_personales.segundo_nombre }"
+                    fluid />
+                </IconField>
+                <label for="segundo_nombre">Segundo nombre</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.datos_personales.segundo_apellido" placeholder="Segundo apellido"
-                  id="segundo_apellido" size="small" :class="{ 'p-invalid': errors.datos_personales.segundo_apellido }"
-                  fluid />
-              </IconField>
-              <label for="segundo_apellido">Segundo Apellido</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.primer_apellido" placeholder="Primer apellido"
+                    id="primer_apellido" size="small" :class="{ 'p-invalid': errors.datos_personales.primer_apellido }"
+                    fluid />
+                </IconField>
+                <label for="primer_apellido">Primer Apellido</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.datos_personales.correo_electronico" placeholder="Correo electrónico"
-                  id="correo_electronico" size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.correo_electronico }" fluid readonly />
-              </IconField>
-              <label for="correo_electronico">Correo electrónico</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.segundo_apellido" placeholder="Segundo apellido"
+                    id="segundo_apellido" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.segundo_apellido }" fluid />
+                </IconField>
+                <label for="segundo_apellido">Segundo Apellido</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputMask v-model="form.datos_personales.telefono" id="telefono" mask="999-9999999"
-                  placeholder="xxx-xxxxxx" size="small" :class="{ 'p-invalid': errors.datos_personales.telefono }"
-                  fluid />
-              </IconField>
-              <label for="telefono">telefono</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.correo_electronico" placeholder="Correo electrónico"
+                    id="correo_electronico" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.correo_electronico }" fluid readonly />
+                </IconField>
+                <label for="correo_electronico">Correo electrónico</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <Select id="option" v-model="form.datos_personales.estado_civil" :options="lista_estado_civil"
-                  optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.estado_civil }" fluid />
-                <label for="estado_civil">Estado civil</label>
-              </IconField>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputMask v-model="form.datos_personales.telefono" id="telefono" mask="999-9999999"
+                    placeholder="xxx-xxxxxx" size="small" :class="{ 'p-invalid': errors.datos_personales.telefono }"
+                    fluid />
+                </IconField>
+                <label for="telefono">telefono</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field w-full">
-            <FloatLabel variant="in">
-              <IconField>
-                <DatePicker v-model="form.datos_personales.fecha_nacimiento"
-                  :class="{ 'p-invalid': errors.datos_personales.fecha_nacimiento }" dateFormat="yy-mm-dd" showIcon
-                  fluid />
-              </IconField>
-              <label for="fecha_nacimiento">Fecha nacimiento</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <Select id="option" v-model="form.datos_personales.estado_civil" :options="lista_estado_civil"
+                    optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.estado_civil }" fluid />
+                  <label for="estado_civil">Estado civil</label>
+                </IconField>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <Select id="option" v-model="form.datos_personales.pais_residencia" :options="lista_paises"
-                  optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.pais_residencia }" fluid />
-              </IconField>
-              <label for="pais_residencia">País de residencia</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field w-full">
+              <FloatLabel variant="in">
+                <IconField>
+                  <DatePicker v-model="form.datos_personales.fecha_nacimiento"
+                    :class="{ 'p-invalid': errors.datos_personales.fecha_nacimiento }" dateFormat="yy-mm-dd" showIcon
+                    fluid />
+                </IconField>
+                <label for="fecha_nacimiento">Fecha nacimiento</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.datos_personales.ciudad_residencia" id="ciudad_residencia" size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.ciudad_residencia }" fluid />
-              </IconField>
-              <label for="ciudad_residencia">Ciudad de residencia</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <Select id="option" v-model="form.datos_personales.pais_residencia" :options="lista_paises"
+                    optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.pais_residencia }" fluid />
+                </IconField>
+                <label for="pais_residencia">País de residencia</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.datos_personales.direccion_residencia" id="direccion_residencia" size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.direccion_residencia }" fluid />
-              </IconField>
-              <label for="direccion_residencia">Dirección de residencia</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.ciudad_residencia" id="ciudad_residencia" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.ciudad_residencia }" fluid />
+                </IconField>
+                <label for="ciudad_residencia">Ciudad de residencia</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <Select class="w-full" id="option" v-model="form.datos_personales.tipo_documento"
-                  :options="lista_documento" optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.tipo_documento }" fluid />
-              </IconField>
-              <label for="tipo_documento">Tipo Documento</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.direccion_residencia" id="direccion_residencia" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.direccion_residencia }" fluid />
+                </IconField>
+                <label for="direccion_residencia">Dirección de residencia</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.datos_personales.numero_documento" placeholder="Número de documento"
-                  id="numero_documento" size="small" :class="{ 'p-invalid': errors.datos_personales.numero_documento }"
-                  readonly fluid />
-              </IconField>
-              <label for="numero_documento">Numero Documento</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <Select class="w-full" id="option" v-model="form.datos_personales.tipo_documento"
+                    :options="lista_documento" optionLabel="label"
+                    :class="{ 'p-invalid': errors.datos_personales.tipo_documento }" fluid />
+                </IconField>
+                <label for="tipo_documento">Tipo Documento</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field w-full">
-            <FloatLabel variant="in">
-              <IconField>
-                <DatePicker v-model="form.datos_personales.fecha_documento_expedicion"
-                  :class="{ 'p-invalid': errors.datos_personales.fecha_expedicion }" dateFormat="yy-mm-dd" showIcon
-                  fluid />
-              </IconField>
-              <label for="fecha_expedicion">F. expedición documento</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.numero_documento" placeholder="Número de documento"
+                    id="numero_documento" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.numero_documento }" readonly fluid />
+                </IconField>
+                <label for="numero_documento">Numero Documento</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.datos_personales.ciudad_documento_expedicion" id="ciudad_documento_expedicion"
-                  size="small" :class="{ 'p-invalid': errors.datos_personales.ciudad_documento_expedicion }" fluid />
-              </IconField>
-              <label for="ciudad_documento_expedicion">Ciudad de expedición del documento</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field w-full">
+              <FloatLabel variant="in">
+                <IconField>
+                  <DatePicker v-model="form.datos_personales.fecha_documento_expedicion"
+                    :class="{ 'p-invalid': errors.datos_personales.fecha_expedicion }" dateFormat="yy-mm-dd" showIcon
+                    fluid />
+                </IconField>
+                <label for="fecha_expedicion">F. expedición documento</label>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.datos_personales.ciudad_nacimiento" id="ciudad_nacimiento" size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.ciudad_nacimiento }" fluid />
-              </IconField>
-              <label for="ciudad_nacimiento">Ciudad de nacimiento</label>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.ciudad_documento_expedicion"
+                    id="ciudad_documento_expedicion" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.ciudad_documento_expedicion }" fluid />
+                </IconField>
+                <label for="ciudad_documento_expedicion">Ciudad de expedición del documento</label>
+              </FloatLabel>
+            </div>
+
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.ciudad_nacimiento" id="ciudad_nacimiento" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.ciudad_nacimiento }" fluid />
+                </IconField>
+                <label for="ciudad_nacimiento">Ciudad de nacimiento</label>
+              </FloatLabel>
+            </div>
 
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField class="w-full">
-                <Select id="option" v-model="form.datos_personales.genero" :options="lista_genero" optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.genero }" fluid />
-                <label for="genero">Género Biológico</label>
-              </IconField>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField class="w-full">
+                  <Select id="option" v-model="form.datos_personales.genero" :options="lista_genero" optionLabel="label"
+                    :class="{ 'p-invalid': errors.datos_personales.genero }" fluid />
+                  <label for="genero">Género Biológico</label>
+                </IconField>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField class="w-full">
-                <Select id="option" v-model="form.datos_personales.genero_identitario_sn" :options="opcion_sn"
-                  optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.genero_identitario_sn }" fluid />
-                <label for="genero_identitario">Género Identitario</label>
-              </IconField>
-            </FloatLabel>
-          </div>
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField class="w-full">
+                  <Select id="option" v-model="form.datos_personales.genero_identitario_sn" :options="opcion_sn"
+                    optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.genero_identitario_sn }" fluid />
+                  <label for="genero_identitario">Género Identitario</label>
+                </IconField>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field" v-if="form.datos_personales.genero_identitario_sn.value === 'SI'">
-            <FloatLabel variant="in">
-              <IconField class="w-full">
-                <Select id="option" v-model="form.datos_personales.genero_identitario"
-                  :options="lista_genero_identitario" optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.genero_identitario }" fluid />
-                <label for="genero_identitario">Género Identitario</label>
-              </IconField>
-            </FloatLabel>
-          </div>
+            <div class="p-field" v-if="form.datos_personales.genero_identitario_sn.value === 'SI'">
+              <FloatLabel variant="in">
+                <IconField class="w-full">
+                  <Select id="option" v-model="form.datos_personales.genero_identitario"
+                    :options="lista_genero_identitario" optionLabel="label"
+                    :class="{ 'p-invalid': errors.datos_personales.genero_identitario }" fluid />
+                  <label for="genero_identitario">Género Identitario</label>
+                </IconField>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField class="w-full">
-                <Select id="option" v-model="form.datos_personales.nombre_identitario_sn" :options="opcion_sn"
-                  optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.nombre_identitario }" fluid />
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField class="w-full">
+                  <Select id="option" v-model="form.datos_personales.nombre_identitario_sn" :options="opcion_sn"
+                    optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.nombre_identitario }" fluid />
+                  <label for="nombre_identitario">Nombre Identitario</label>
+                </IconField>
+              </FloatLabel>
+            </div>
+
+            <div class="p-field" v-if="form.datos_personales.nombre_identitario_sn.value === 'SI'">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.nombre_identitario" placeholder="Nombre identitario"
+                    id="nombre_identitario" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.nombre_identitario }" fluid />
+                </IconField>
                 <label for="nombre_identitario">Nombre Identitario</label>
-              </IconField>
-            </FloatLabel>
-          </div>
+              </FloatLabel>
+            </div>
 
-          <div class="p-field" v-if="form.datos_personales.nombre_identitario_sn.value === 'SI'">
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputNumber v-model="form.datos_personales.cantidad_personas_viven_casa"
+                    placeholder="Cantidad de personas que viven en casa" id="cantidad_personas_viven_casa" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.cantidad_personas_viven_casa }" fluid
+                    mode="decimal" />
+                </IconField>
+                <label for="cantidad_personas_viven_casa">Cantidad de personas que viven en casa</label>
+              </FloatLabel>
+            </div>
+
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField class="w-full">
+                  <Select id="option" v-model="form.datos_personales.hijos_sn" :options="opcion_sn" optionLabel="label"
+                    :class="{ 'p-invalid': errors.datos_personales.hijos_sn }" fluid />
+                  <label for="hijos_sn">Tiene hijos</label>
+                </IconField>
+              </FloatLabel>
+            </div>
+
+            <div class="p-field" v-if="form.datos_personales.hijos_sn.value === 'SI'">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputNumber v-model="form.datos_personales.numero_hijos" placeholder="Número de hijos"
+                    id="numero_hijos" size="small" :class="{ 'p-invalid': errors.datos_personales.numero_hijos }"
+                    fluid />
+                </IconField>
+                <label for="numero_hijos">Número de hijos</label>
+              </FloatLabel>
+            </div>
+
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField class="w-full">
+                  <Select id="option" v-model="form.datos_personales.alergico_sn" :options="opcion_sn"
+                    optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.alergico_sn }" fluid />
+                  <label for="alergico_sn">Es alérgico</label>
+                </IconField>
+              </FloatLabel>
+            </div>
+
+            <div class="p-field" v-if="form.datos_personales.alergico_sn.value === 'SI'">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.alergico_descripcion" placeholder="Alergias"
+                    id="alergico_descripcion" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.alergico_descripcion }" fluid />
+                </IconField>
+                <label for="alergico_descripcion">Alergias</label>
+              </FloatLabel>
+            </div>
+          </div>
+        </form>
+      </Panel>
+
+      <Panel header="Datos de contacto adicional" class="p-panel-noborder">
+        <div class="grid lg:grid-cols-3 grid-cols-1 gap-2">
+          <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <InputText v-model="form.datos_personales.nombre_identitario" placeholder="Nombre identitario"
-                  id="nombre_identitario" size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.nombre_identitario }" fluid />
+                <InputText v-model="form.datos_contacto_adicional.nombre_contacto"
+                  placeholder="Nombre contacto de emergencia" id="contacto_emergencia_nombre" size="small"
+                  :class="{ 'p-invalid': errors.datos_contacto_adicional.nombre_contacto }" fluid />
               </IconField>
-              <label for="nombre_identitario">Nombre Identitario</label>
+              <label for="contacto_emergencia_nombre">Nombre contacto de emergencia</label>
             </FloatLabel>
           </div>
 
-          <div class="p-field">
+          <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <InputNumber v-model="form.datos_personales.cantidad_personas_viven_casa"
-                  placeholder="Cantidad de personas que viven en casa" id="cantidad_personas_viven_casa" size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.cantidad_personas_viven_casa }" fluid mode="decimal" />
+                <InputMask v-model="form.datos_contacto_adicional.telefono_contacto" id="contacto_emergencia_telefono"
+                  mask="999-9999999" placeholder="xxx-xxxxxx" size="small"
+                  :class="{ 'p-invalid': errors.datos_contacto_adicional.telefono_contacto }" fluid />
               </IconField>
-              <label for="cantidad_personas_viven_casa">Cantidad de personas que viven en casa</label>
+              <label for="contacto_emergencia_telefono">Teléfono contacto de emergencia</label>
             </FloatLabel>
           </div>
 
-          <div class="p-field">
+          <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField class="w-full">
-                <Select id="option" v-model="form.datos_personales.hijos_sn" :options="opcion_sn" optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.hijos_sn }" fluid />
-                <label for="hijos_sn">Tiene hijos</label>
+                <Select id="option" v-model="form.datos_personales.parentesco_contacto"
+                  :options="lista_parentesco_familiar" optionLabel="label"
+                  :class="{ 'p-invalid': errors.datos_personales.parentesco_contacto }" fluid />
+                <label for="contacto_emergencia_relacion">Relación contacto de emergencia</label>
               </IconField>
             </FloatLabel>
           </div>
+        </div>
+      </Panel>
 
-          <div class="p-field" v-if="form.datos_personales.hijos_sn.value === 'SI'">
+      <Panel header="Datos de postulación" class="p-panel-noborder">
+        <div class="grid lg:grid-cols-2 grid-cols-1 gap-2">
+          <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <InputNumber v-model="form.datos_personales.numero_hijos" placeholder="Número de hijos"
-                  id="numero_hijos" size="small" :class="{ 'p-invalid': errors.datos_personales.numero_hijos }" fluid />
+                <InputText v-model="form.datos_postulacion.nombre_empresa" placeholder="Nombre de la empresa"
+                  id="nombre_empresa" size="small" :class="{ 'p-invalid': errors.datos_postulacion.nombre_empresa }"
+                  fluid />
               </IconField>
-              <label for="numero_hijos">Número de hijos</label>
+              <label for="nombre_empresa">Nombre de la empresa</label>
             </FloatLabel>
           </div>
 
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField class="w-full">
-                <Select id="option" v-model="form.datos_personales.alergico_sn" :options="opcion_sn" optionLabel="label"
-                  :class="{ 'p-invalid': errors.datos_personales.alergico_sn }" fluid />
-                <label for="alergico_sn">Es alérgico</label>
-              </IconField>
-            </FloatLabel>
-          </div>
-
-          <div class="p-field" v-if="form.datos_personales.alergico_sn.value === 'SI'">
+          <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <InputText v-model="form.datos_personales.alergico_descripcion" placeholder="Alergias"
-                  id="alergico_descripcion" size="small"
-                  :class="{ 'p-invalid': errors.datos_personales.alergico_descripcion }" fluid />
+                <InputText v-model="form.datos_postulacion.cargo_postulado" placeholder="Cargo postulado"
+                  id="cargo_postulado" size="small" :class="{ 'p-invalid': errors.datos_postulacion.cargo_postulado }"
+                  fluid />
               </IconField>
-              <label for="alergico_descripcion">Alergias</label>
+              <label for="cargo_postulado">Cargo postulado</label>
             </FloatLabel>
           </div>
         </div>
-      </form>
-    </Panel>
+      </Panel>
 
-    <Panel header="Datos de contacto adicional" class="p-panel-noborder">
-      <div class="grid lg:grid-cols-3 grid-cols-1 gap-2">
-        <div class="p-field w-full">
-          <FloatLabel variant="in">
-            <IconField>
-              <InputText v-model="form.datos_contacto_adicional.nombre_contacto"
-                placeholder="Nombre contacto de emergencia" id="contacto_emergencia_nombre" size="small"
-                :class="{ 'p-invalid': errors.datos_contacto_adicional.nombre_contacto }" fluid />
-            </IconField>
-            <label for="contacto_emergencia_nombre">Nombre contacto de emergencia</label>
-          </FloatLabel>
-        </div>
+      <Panel header="Tallas" class="p-panel-noborder">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-center justify-around">
+          <div class="p-field w-full">
+            <FloatLabel variant="in">
+              <IconField>
+                <InputText v-model="form.tallas.calzado" placeholder="Talla de calzado" id="calzado" size="small"
+                  :class="{ 'p-invalid': errors.tallas.calzado }" fluid />
+              </IconField>
+              <label for="calzado">Talla de calzado</label>
+            </FloatLabel>
+          </div>
 
-        <div class="p-field w-full">
-          <FloatLabel variant="in">
-            <IconField>
-              <InputMask v-model="form.datos_contacto_adicional.telefono_contacto" id="contacto_emergencia_telefono"
-                mask="999-9999999" placeholder="xxx-xxxxxx" size="small"
-                :class="{ 'p-invalid': errors.datos_contacto_adicional.telefono_contacto }" fluid />
-            </IconField>
-            <label for="contacto_emergencia_telefono">Teléfono contacto de emergencia</label>
-          </FloatLabel>
-        </div>
+          <div class="p-field w-full">
+            <FloatLabel variant="in">
+              <IconField>
+                <InputText v-model="form.tallas.pantalon" placeholder="Talla de pantalón" id="pantalon" size="small"
+                  :class="{ 'p-invalid': errors.tallas.pantalon }" fluid />
+              </IconField>
+              <label for="pantalon">Talla de pantalón</label>
+            </FloatLabel>
+          </div>
 
-        <div class="p-field w-full">
-          <FloatLabel variant="in">
-            <IconField class="w-full">
-              <Select id="option" v-model="form.datos_personales.parentesco_contacto"
-                :options="lista_parentesco_familiar" optionLabel="label"
-                :class="{ 'p-invalid': errors.datos_personales.parentesco_contacto }" fluid />
-              <label for="contacto_emergencia_relacion">Relación contacto de emergencia</label>
-            </IconField>
-          </FloatLabel>
-        </div>
-      </div>
-    </Panel>
+          <div class="p-field w-full">
+            <FloatLabel variant="in">
+              <IconField>
+                <InputText v-model="form.tallas.camisa" placeholder="Talla de camisa" id="camisa" size="small"
+                  :class="{ 'p-invalid': errors.tallas.camisa }" fluid />
+              </IconField>
+              <label for="camisa">Talla de camisa</label>
+            </FloatLabel>
+          </div>
 
-    <Panel header="Datos de postulación" class="p-panel-noborder">
-      <div class="grid lg:grid-cols-2 grid-cols-1 gap-2">
-        <div class="p-field w-full">
-          <FloatLabel variant="in">
-            <IconField>
-              <InputText v-model="form.datos_postulacion.nombre_empresa" placeholder="Nombre de la empresa"
-                id="nombre_empresa" size="small" :class="{ 'p-invalid': errors.datos_postulacion.nombre_empresa }"
-                fluid />
-            </IconField>
-            <label for="nombre_empresa">Nombre de la empresa</label>
-          </FloatLabel>
-        </div>
+          <div class="p-field w-full">
+            <FloatLabel variant="in">
+              <IconField>
+                <InputText v-model="form.tallas.estatura" placeholder="Estatura" id="estatura" size="small"
+                  :class="{ 'p-invalid': errors.tallas.estatura }" fluid />
+              </IconField>
+              <label for="estatura">Estatura</label>
+            </FloatLabel>
+          </div>
 
-        <div class="p-field w-full">
-          <FloatLabel variant="in">
-            <IconField>
-              <InputText v-model="form.datos_postulacion.cargo_postulado" placeholder="Cargo postulado"
-                id="cargo_postulado" size="small" :class="{ 'p-invalid': errors.datos_postulacion.cargo_postulado }"
-                fluid />
-            </IconField>
-            <label for="cargo_postulado">Cargo postulado</label>
-          </FloatLabel>
+          <div class="p-field w-full">
+            <FloatLabel variant="in">
+              <IconField>
+                <InputText v-model="form.tallas.peso" placeholder="Peso" id="peso" size="small"
+                  :class="{ 'p-invalid': errors.tallas.peso }" fluid />
+              </IconField>
+              <label for="peso">Peso</label>
+            </FloatLabel>
+          </div>
         </div>
-      </div>
-    </Panel>
-
-    <Panel header="Tallas" class="p-panel-noborder">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-center justify-around">
-        <div class="p-field w-full">
-          <FloatLabel variant="in">
-            <IconField>
-              <InputText v-model="form.tallas.calzado" placeholder="Talla de calzado" id="calzado" size="small"
-                :class="{ 'p-invalid': errors.tallas.calzado }" fluid />
-            </IconField>
-            <label for="calzado">Talla de calzado</label>
-          </FloatLabel>
-        </div>
-
-        <div class="p-field w-full">
-          <FloatLabel variant="in">
-            <IconField>
-              <InputText v-model="form.tallas.pantalon" placeholder="Talla de pantalón" id="pantalon" size="small"
-                :class="{ 'p-invalid': errors.tallas.pantalon }" fluid />
-            </IconField>
-            <label for="pantalon">Talla de pantalón</label>
-          </FloatLabel>
-        </div>
-
-        <div class="p-field w-full">
-          <FloatLabel variant="in">
-            <IconField>
-              <InputText v-model="form.tallas.camisa" placeholder="Talla de camisa" id="camisa" size="small"
-                :class="{ 'p-invalid': errors.tallas.camisa }" fluid />
-            </IconField>
-            <label for="camisa">Talla de camisa</label>
-          </FloatLabel>
-        </div>
-
-        <div class="p-field w-full">
-          <FloatLabel variant="in">
-            <IconField>
-              <InputText v-model="form.tallas.estatura" placeholder="Estatura" id="estatura" size="small"
-                :class="{ 'p-invalid': errors.tallas.estatura }" fluid />
-            </IconField>
-            <label for="estatura">Estatura</label>
-          </FloatLabel>
-        </div>
-
-        <div class="p-field w-full">
-          <FloatLabel variant="in">
-            <IconField>
-              <InputText v-model="form.tallas.peso" placeholder="Peso" id="peso" size="small"
-                :class="{ 'p-invalid': errors.tallas.peso }" fluid />
-            </IconField>
-            <label for="peso">Peso</label>
-          </FloatLabel>
-        </div>
-      </div>
-    </Panel>
+      </Panel>
+    </ScrollPanel>
 
     <template #footer>
       <Button label="Cerrar" icon="pi pi-times" severity="secondary" outlined
@@ -1388,97 +1506,102 @@ onMounted(() => {
 
   <!-- Modal Experiencia Laboral -->
   <Dialog v-model:visible="visible_experiencia" modal header="Editar Informacion de Experiencia Laboral"
-    :data="form.experiencia_laboral[dialogIndex]" :style="{ width: '75rem' }">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <InputText v-model="form.experiencia_laboral[dialogIndex].nombre_empresa" id="nombre_empresa" size="small"
-              :class="{ 'p-invalid': errors.experiencia_laboral.nombre_empresa }" fluid />
-          </IconField>
-          <label for="nombre_empresa">Nombre de la empresa</label>
-        </FloatLabel>
-      </div>
+    :data="form.experiencia_laboral[dialogIndex]" :maximizable="true" :closable="false"
+    :breakpoints="{ '960px': '75vw', '640px': '90vw', '480px': '100vw' }">
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <InputText v-model="form.experiencia_laboral[dialogIndex].cargo" id="cargo" size="small"
-              :class="{ 'p-invalid': errors.experiencia_laboral.cargo }" fluid />
-          </IconField>
-          <label for="cargo">Cargo</label>
-        </FloatLabel>
-      </div>
+    <ScrollPanel :style="{ width: '100%', height: '70vh' }">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.experiencia_laboral[dialogIndex].nombre_empresa" id="nombre_empresa" size="small"
+                :class="{ 'p-invalid': errors.experiencia_laboral.nombre_empresa }" fluid />
+            </IconField>
+            <label for="nombre_empresa">Nombre de la empresa</label>
+          </FloatLabel>
+        </div>
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <InputText v-model="form.experiencia_laboral[dialogIndex].nombre_jefe" id="nombre_jefe" size="small"
-              :class="{ 'p-invalid': errors.experiencia_laboral.nombre_jefe }" fluid />
-          </IconField>
-          <label for="nombre_jefe">Nombre del jefe</label>
-        </FloatLabel>
-      </div>
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.experiencia_laboral[dialogIndex].cargo" id="cargo" size="small"
+                :class="{ 'p-invalid': errors.experiencia_laboral.cargo }" fluid />
+            </IconField>
+            <label for="cargo">Cargo</label>
+          </FloatLabel>
+        </div>
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <InputText v-model="form.experiencia_laboral[dialogIndex].telefono_jefe" id="telefono_jefe" size="small"
-              :class="{ 'p-invalid': errors.experiencia_laboral.telefono_jefe }" fluid />
-          </IconField>
-          <label for="telefono_jefe">Telefono del jefe</label>
-        </FloatLabel>
-      </div>
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.experiencia_laboral[dialogIndex].nombre_jefe" id="nombre_jefe" size="small"
+                :class="{ 'p-invalid': errors.experiencia_laboral.nombre_jefe }" fluid />
+            </IconField>
+            <label for="nombre_jefe">Nombre del jefe</label>
+          </FloatLabel>
+        </div>
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <InputText v-model="form.experiencia_laboral[dialogIndex].salario_anterior" id="salario_anterior"
-              size="small" :class="{ 'p-invalid': errors.experiencia_laboral.salario_anterior }" fluid />
-          </IconField>
-          <label for="salario_anterior">Salario</label>
-        </FloatLabel>
-      </div>
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.experiencia_laboral[dialogIndex].telefono_jefe" id="telefono_jefe" size="small"
+                :class="{ 'p-invalid': errors.experiencia_laboral.telefono_jefe }" fluid />
+            </IconField>
+            <label for="telefono_jefe">Telefono del jefe</label>
+          </FloatLabel>
+        </div>
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <Select id="actual" class="w-full" v-model="form.experiencia_laboral[dialogIndex].actual" :options="[
-              { label: 'Sí', value: true },
-              { label: 'No', value: false },
-            ]" optionLabel="label" :class="{ 'p-invalid': errors.experiencia_laboral.actual }" fluid />
-          </IconField>
-          <label for="actual">¿Actualmente trabaja aquí?</label>
-        </FloatLabel>
-      </div>
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.experiencia_laboral[dialogIndex].salario_anterior" id="salario_anterior"
+                size="small" :class="{ 'p-invalid': errors.experiencia_laboral.salario_anterior }" fluid />
+            </IconField>
+            <label for="salario_anterior">Salario</label>
+          </FloatLabel>
+        </div>
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <DatePicker v-model="form.experiencia_laboral[dialogIndex].fecha_inicio" view="month" dateFormat="mm/yy"
-              showIcon fluid />
-          </IconField>
-          <label for="fecha_inicio">Fecha de inicio</label>
-        </FloatLabel>
-      </div>
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <Select id="actual" class="w-full" v-model="form.experiencia_laboral[dialogIndex].actual" :options="[
+                { label: 'Sí', value: true },
+                { label: 'No', value: false },
+              ]" optionLabel="label" :class="{ 'p-invalid': errors.experiencia_laboral.actual }" fluid />
+            </IconField>
+            <label for="actual">¿Actualmente trabaja aquí?</label>
+          </FloatLabel>
+        </div>
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <DatePicker v-model="form.experiencia_laboral[dialogIndex].fecha_fin" view="month" dateFormat="mm/yy"
-              showIcon fluid />
-          </IconField>
-          <label for="fecha_fin">Fecha de fin</label>
-        </FloatLabel>
-      </div>
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <DatePicker v-model="form.experiencia_laboral[dialogIndex].fecha_inicio" view="month" dateFormat="mm/yy"
+                showIcon fluid />
+            </IconField>
+            <label for="fecha_inicio">Fecha de inicio</label>
+          </FloatLabel>
+        </div>
 
-      <div class="p-field w-full md:col-span-4">
-        <FloatLabel variant="in">
-          <Textarea class="w-full" v-model="form.experiencia_laboral[dialogIndex].funciones" rows="5" cols="30" fluid />
-          <label for="funciones">Funciones</label>
-        </FloatLabel>
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <DatePicker v-model="form.experiencia_laboral[dialogIndex].fecha_fin" view="month" dateFormat="mm/yy"
+                showIcon fluid />
+            </IconField>
+            <label for="fecha_fin">Fecha de fin</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full md:col-span-4">
+          <FloatLabel variant="in">
+            <Textarea class="w-full" v-model="form.experiencia_laboral[dialogIndex].funciones" rows="5" cols="30"
+              fluid />
+            <label for="funciones">Funciones</label>
+          </FloatLabel>
+        </div>
       </div>
-    </div>
+    </ScrollPanel>
 
     <template #footer>
       <Button label="Cerrar" icon="pi pi-times" severity="secondary" outlined
@@ -1488,71 +1611,75 @@ onMounted(() => {
 
   <!-- Modal Educación, Estudios -->
   <Dialog v-model:visible="visible_educacion" modal header="Editar Informacion Estudios"
-    :data="form.estudios[dialogIndexEstudio]" :style="{ width: '75rem' }">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <Select id="nivel" class="w-full" v-model="form.estudios[dialogIndexEstudio].nivel"
-              :options="lista_nivel_estudio" optionLabel="label" :class="{ 'p-invalid': errors.estudios.nivel }"
-              fluid />
-          </IconField>
-          <label for="nivel">Nivel de estudio</label>
-        </FloatLabel>
-      </div>
+    :data="form.estudios[dialogIndexEstudio]" :maximizable="true" :closable="false"
+    :breakpoints="{ '960px': '75vw', '640px': '90vw', '480px': '100vw' }">
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <InputText v-model="form.estudios[dialogIndexEstudio].nombre" placeholder="Nombre de Institucion"
-              id="nombre" size="small" :class="{ 'p-invalid': errors.estudios.nombre }" fluid />
-          </IconField>
-          <label for="nombre">Institucion</label>
-        </FloatLabel>
-      </div>
+    <ScrollPanel :style="{ width: '100%', height: '70vh' }">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <Select id="nivel" class="w-full" v-model="form.estudios[dialogIndexEstudio].nivel"
+                :options="lista_nivel_estudio" optionLabel="label" :class="{ 'p-invalid': errors.estudios.nivel }"
+                fluid />
+            </IconField>
+            <label for="nivel">Nivel de estudio</label>
+          </FloatLabel>
+        </div>
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <Select id="actual" class="w-full" v-model="form.estudios[dialogIndexEstudio].actual"
-              :options="lista_estado_estudio" optionLabel="label" :class="{ 'p-invalid': errors.estudios.actual }"
-              fluid />
-          </IconField>
-          <label for="actual">Estado Estudio</label>
-        </FloatLabel>
-      </div>
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.estudios[dialogIndexEstudio].nombre" placeholder="Nombre de Institucion"
+                id="nombre" size="small" :class="{ 'p-invalid': errors.estudios.nombre }" fluid />
+            </IconField>
+            <label for="nombre">Institucion</label>
+          </FloatLabel>
+        </div>
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <Select id="modalidad" class="w-full" v-model="form.estudios[dialogIndexEstudio].modalidad"
-              :options="lista_modalidad_estudio" optionLabel="label" :class="{ 'p-invalid': errors.estudios.modalidad }"
-              fluid />
-          </IconField>
-          <label for="modalidad">Modalidad de estudio</label>
-        </FloatLabel>
-      </div>
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <Select id="actual" class="w-full" v-model="form.estudios[dialogIndexEstudio].actual"
+                :options="lista_estado_estudio" optionLabel="label" :class="{ 'p-invalid': errors.estudios.actual }"
+                fluid />
+            </IconField>
+            <label for="actual">Estado Estudio</label>
+          </FloatLabel>
+        </div>
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <DatePicker v-model="form.estudios[dialogIndexEstudio].fecha_inicio" view="month" dateFormat="mm/yy"
-              showIcon fluid />
-          </IconField>
-          <label for="fecha_inicio">Fecha de inicio</label>
-        </FloatLabel>
-      </div>
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <Select id="modalidad" class="w-full" v-model="form.estudios[dialogIndexEstudio].modalidad"
+                :options="lista_modalidad_estudio" optionLabel="label"
+                :class="{ 'p-invalid': errors.estudios.modalidad }" fluid />
+            </IconField>
+            <label for="modalidad">Modalidad de estudio</label>
+          </FloatLabel>
+        </div>
 
-      <div class="p-field w-full">
-        <FloatLabel variant="in">
-          <IconField>
-            <DatePicker v-model="form.estudios[dialogIndexEstudio].fecha_fin" view="month" dateFormat="mm/yy" showIcon
-              fluid />
-          </IconField>
-          <label for="fecha_fin">Fecha de fin</label>
-        </FloatLabel>
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <DatePicker v-model="form.estudios[dialogIndexEstudio].fecha_inicio" view="month" dateFormat="mm/yy"
+                showIcon fluid />
+            </IconField>
+            <label for="fecha_inicio">Fecha de inicio</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <DatePicker v-model="form.estudios[dialogIndexEstudio].fecha_fin" view="month" dateFormat="mm/yy" showIcon
+                fluid />
+            </IconField>
+            <label for="fecha_fin">Fecha de fin</label>
+          </FloatLabel>
+        </div>
       </div>
-    </div>
+    </ScrollPanel>
 
     <template #footer>
       <Button label="Cerrar" icon="pi pi-times" severity="secondary" outlined
@@ -1562,10 +1689,10 @@ onMounted(() => {
 
   <!-- Modal Sagrilaft  -->
   <Dialog v-model:visible="visible_sagrilaft" modal header="Editar Informacion." :data="form.sagrilaft"
-    :style="{ width: '90rem' }">
-    <div class="w-full">
+    :maximizable="true" :closable="false" :breakpoints="{ '960px': '75vw', '640px': '90vw', '480px': '100vw' }">
+    <ScrollPanel :style="{ width: '100%', height: '70vh' }">
       <Panel header="operaciones internacionales">
-        <div class="grid lg:grid-cols-5 md:grid-cols-4 gap-2 justify-items-center">
+        <div class="grid lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-1 gap-1 justify-items-center">
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
@@ -1613,16 +1740,16 @@ onMounted(() => {
             </FloatLabel>
           </div>
 
-          <div class="p-field w-full col-span-6"
+          <div class="p-field w-full lg:col-span-5 md:col-span-4 sm:col-span-1"
             v-if="form.sagrilaft.operaciones_internacionales.productos_financieros_sn.value === 'SI'">
-            <DataTable :value="data_entidad_financiera" editMode="cell" @cell-edit-complete="onCellEditComplete" :pt="{
-              table: { style: 'min-width: 50rem' },
-              column: {
-                bodycell: ({ state }) => ({
-                  class: [{ '!py-0': state['d_editing'] }],
-                }),
-              },
-            }">
+            <DataTable tableStyle="min-width: 100rem" size="small" :value="data_entidad_financiera" editMode="cell"
+              @cell-edit-complete="onCellEditComplete" :pt="{
+                column: {
+                  bodycell: ({ state }) => ({
+                    class: [{ '!py-0': state['d_editing'] }],
+                  }),
+                },
+              }">
               <Column v-for="col of columns_entidad_financiera" :key="col.field" :field="col.field"
                 :header="col.header">
                 <template #body="{ data, field }">
@@ -1769,7 +1896,7 @@ onMounted(() => {
       </Panel>
 
       <Panel header="Personas expuestas politicamente">
-        <div class="grid grid-cols-4 gap-2 justify-items-center">
+        <div class="grid grid-cols-1 gap-1 justify-items-center">
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
@@ -1880,16 +2007,16 @@ onMounted(() => {
             </FloatLabel>
           </div>
 
-          <div class="p-field col-span-4 w-full"
+          <div class="p-field  w-full"
             v-if="form.sagrilaft.personas_expuestas_politicamente.familia_considerada_pep_sn.value === 'SI'">
-            <DataTable :value="data_pep_familiar" editMode="cell" @cell-edit-complete="onCellEditComplete" :pt="{
-              table: { style: 'min-width: 50rem' },
-              column: {
-                bodycell: ({ state }) => ({
-                  class: [{ '!py-0': state['d_editing'] }],
-                }),
-              },
-            }">
+            <DataTable tableStyle="min-width: 50rem" size="small" :value="data_pep_familiar" editMode="cell"
+              @cell-edit-complete="onCellEditComplete" :pt="{
+                column: {
+                  bodycell: ({ state }) => ({
+                    class: [{ '!py-0': state['d_editing'] }],
+                  }),
+                },
+              }">
               <Column v-for="col of columns_pep" :key="col.field" :field="col.field" :header="col.header">
                 <template #body="{ data, field }">
                   {{ field === 'numero_producto' ? formatCurrency(data[field]) : data[field] }}
@@ -1899,7 +2026,7 @@ onMounted(() => {
                     <InputText v-model="data[field]" autofocus fluid />
                   </template>
                   <template v-else>
-                    <InputNumber v-model="data[field]" mode="currency" currency="USD" locale="en-US" autofocus fluid />
+                    <InputText v-model="data[field]"  autofocus fluid />
                   </template>
                 </template>
               </Column>
@@ -1927,7 +2054,7 @@ onMounted(() => {
         </div>
       </Panel>
 
-    </div>
+    </ScrollPanel>
     <template #footer>
       <Button label="Cerrar" icon="pi pi-times" severity="secondary" outlined @click="visible_sagrilaft = false" />
     </template>
@@ -1935,8 +2062,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-
-
 .p-floatlabel label {
   font-weight: 300;
 }

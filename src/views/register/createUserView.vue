@@ -37,7 +37,7 @@ const resolver = ref(
       password: z
         .string()
         .min(6, { message: 'Minimum 6 characters.' })
-        .max(8, { message: 'Maximum 8 characters.' })
+        .max(20, { message: 'Maximum 20 characters.' })
         .refine((value) => /[a-z]/.test(value), {
           message: 'Must have a lowercase letter.',
         })
@@ -81,27 +81,7 @@ const goRouteLogin = () => {
   router.push({ name: 'defaultView' })
 }
 
-const create = (values) => {
-  console.log(':rocket: ~ create ~ values', values)
-  const payload = {
-    identificacion: username.value,
-    email: email.value,
-    password: password.value,
-    username: username.value,
-  }
-  http
-    .post('auth/register', payload)
-    .then((response) => {
-      console.log(':rocket: ~ .then ~ response', response.data)
-      swal('Su cuenta se ha creado!', 'Verifica tu correo', 'success')
 
-      router.push({ path: '/' })
-    })
-    .catch((error) => {
-      console.log(error)
-      swal('Wrong!', 'Sucedio Error al Crear Usuario!', 'error')
-    })
-}
 
 const onSubmit = handleSubmit(
   (values) => {
@@ -175,10 +155,9 @@ onMounted(() => {
           <div class="text-center mb-5">
             <Avatar :image="avatar_create" size="xlarge" class="mr-2" />
             <div class="text-900 text-3xl font-medium mb-3">Crear Usuario</div>
-            <span class="text-600 font-medium line-height-3">Registro</span>
-            <a class="font-medium no-underline ml-2 text-blue-500 cursor-pointer" @click="goRouteLogin()"
-              >Volver a Iniciar Sesión</a
-            >
+
+            <Button label="Volver a Iniciar Sesión" variant="outlined" icon="pi pi-arrow-left" @click="goRouteLogin()" />
+
           </div>
           <Form
             id="createUser"
