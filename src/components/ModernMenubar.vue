@@ -199,7 +199,7 @@ const props = defineProps({
   <Menubar class="modern-menubar">
     <template #start>
 
-      <span class="font-bold text-shadow-sm uppercase font-mono"> Inscripción Hoja de Vida version 1.4
+      <span class="font-bold text-shadow-sm uppercase font-mono"> Inscripción Hoja de Vida version 1.5
       </span>
 
       <!--
@@ -230,7 +230,7 @@ const props = defineProps({
     </template>
   </Menubar>
 
-  <Dialog v-model:visible="showPerfil" modal  :closable="true"
+  <Dialog v-model:visible="showPerfil" modal :closable="true"
     :breakpoints="{ '960px': '75vw', '640px': '90vw', '480px': '100vw' }">
     <template #header>
       <div class="flex justify-between items-center w-full">
@@ -264,7 +264,7 @@ const props = defineProps({
         </IconField>
         <Message v-if="errors.passwordConfirm" id="email-help" class="p-error">{{
           errors.passwordConfirm
-        }}</Message>
+          }}</Message>
       </div>
 
 

@@ -246,6 +246,7 @@ export const opcion_tipo_moneda = [
 export const opcion_tipo_operacion_moneda = [
   { label: 'EXPORTACION', value: 'EXPORTACION' },
   { label: 'INVERSION', value: 'INVERSION' },
+  { label: 'IMPORTACION', value: 'IMPORTACION' },
   { label: 'TRANSFERENCIA', value: 'TRANSFERENCIA' },
   { label: 'PAGO DE SERVICIOS', value: 'PAGO DE SERVICIOS' },
 ]
@@ -267,6 +268,18 @@ export const lista_genero_identitario = [
   { label: 'Mujer Transgénero', value: '2' },
   { label: 'Persona no binaria', value: '3' },
 ]
+
+export const lista_grupo_sanguineo = [
+  { label: 'A+', value: 'A+' },
+  { label: 'A-', value: 'A-' },
+  { label: 'B+', value: 'B+' },
+  { label: 'B-', value: 'B-' },
+  { label: 'AB+', value: 'AB+' },
+  { label: 'AB-', value: 'AB-' },
+  { label: 'O+', value: 'O+' },
+  { label: 'O-', value: 'O-' },
+]
+
 export const lista_documento = [
   { label: 'Cédula de ciudadanía', value: 'CC' },
   { label: 'Cédula de extranjería', value: 'CE' },
@@ -290,14 +303,14 @@ export const ProductService = {
   getProductsData() {
     return [
       {
-        nombre_entidad: 'Digite Entidad',
-        tipo_producto: 'Digite Producto',
-        image: 'Digite Ciudad',
-        numero_producto: 10,
-        ciudad: 'Digite Ciudad',
-        pais: 'Digite Pais',
-        moneda: 'Digite Moneda',
-        monto: 'Digite Monto',
+        nombre_entidad: '',
+        tipo_producto: '',
+        image: '',
+        numero_producto: '',
+        ciudad: '',
+        pais: '',
+        moneda: '',
+        monto: 0,
       },
     ]
   },
@@ -319,11 +332,11 @@ export const PepService = {
   getPepData() {
     return [
       {
-        nombre_completo: 'Digite Nombre Completo',
-        tipo_identificacion: 'Digite Tipo Identificacion',
+        nombre_completo: '',
+        tipo_identificacion: '',
         numero_identificacion: 0,
-        parentesco: 'Digite Parentesco',
-        descripcion_pep: 'Digite Descripcion',
+        parentesco: '',
+        descripcion_pep: '',
       },
     ]
   },

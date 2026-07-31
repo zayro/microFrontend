@@ -45,6 +45,7 @@ import {
   lista_parentesco_familiar,
   lista_estado_estudio,
   lista_modalidad_estudio,
+  lista_grupo_sanguineo,
 } from '@/services/dataList'
 
 const confStore = useConfigStoreRef()
@@ -74,6 +75,7 @@ const defaultFormData = {
     ciudad_documento_expedicion: '',
     ciudad_nacimiento: '',
     fecha_documento_expedicion: '',
+    pais_nacimiento: '',
     pais_residencia: '',
     ciudad_residencia: '',
     direccion_residencia: '',
@@ -90,6 +92,7 @@ const defaultFormData = {
     hijos_sn: '',
     hijos_numeros: '',
     cantidad_personas_viven_casa: '',
+    grupo_sanguineo: '',
   },
   tallas: {
     calzado: '',
@@ -163,6 +166,7 @@ const errors = reactive({
     numero_documento: '',
     ciudad_documento_expedicion: '',
     fecha_documento_expedicion: '',
+    pais_nacimiento: '',
     pais_residencia: '',
     ciudad_residencia: '',
     direccion_residencia: '',
@@ -178,6 +182,7 @@ const errors = reactive({
     alergico_descripcion: '',
     hijos_sn: '',
     hijos_numeros: '',
+    grupo_sanguineo: '',
   },
   tallas: {
     calzado: '',
@@ -735,7 +740,7 @@ watch(
 )
 
 onMounted(() => {
-  ProductService.getProductsMini().then((data) => {
+  ProductService.getProducts().then((data) => {
     data_entidad_financiera.value = data
     // Inicializar productos_financieros si hay datos
     if (Array.isArray(data)) {
@@ -853,7 +858,8 @@ onMounted(() => {
 
 <template>
 
-  <div class="flex flex-row min-h-screen items-center justify-between background-main transition-colors duration-300 cards-container">
+  <div
+    class="flex flex-row min-h-screen items-center justify-between background-main transition-colors duration-300 cards-container">
 
 
     <ModernMenubar :title="'Bienvenido'" :currentTime="currentTime" :itemsBreadCrumb="items" />
@@ -1168,27 +1174,6 @@ onMounted(() => {
             <div class="p-field">
               <FloatLabel variant="in">
                 <IconField>
-                  <Select id="option" v-model="form.datos_personales.estado_civil" :options="lista_estado_civil"
-                    optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.estado_civil }" fluid />
-                  <label for="estado_civil">Estado civil</label>
-                </IconField>
-              </FloatLabel>
-            </div>
-
-            <div class="p-field w-full">
-              <FloatLabel variant="in">
-                <IconField>
-                  <DatePicker v-model="form.datos_personales.fecha_nacimiento"
-                    :class="{ 'p-invalid': errors.datos_personales.fecha_nacimiento }" dateFormat="yy-mm-dd" showIcon
-                    fluid />
-                </IconField>
-                <label for="fecha_nacimiento">Fecha nacimiento</label>
-              </FloatLabel>
-            </div>
-
-            <div class="p-field">
-              <FloatLabel variant="in">
-                <IconField>
                   <Select id="option" v-model="form.datos_personales.pais_residencia" :options="lista_paises"
                     optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.pais_residencia }" fluid />
                 </IconField>
@@ -1215,6 +1200,40 @@ onMounted(() => {
                 <label for="direccion_residencia">Dirección de residencia</label>
               </FloatLabel>
             </div>
+
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <Select id="option" v-model="form.datos_personales.pais_nacimiento" :options="lista_paises"
+                    optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.pais_nacimiento }" fluid />
+                </IconField>
+                <label for="pais_nacimiento">País de nacimiento</label>
+              </FloatLabel>
+            </div>
+
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputText v-model="form.datos_personales.ciudad_nacimiento" id="ciudad_nacimiento" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.ciudad_nacimiento }" fluid />
+                </IconField>
+                <label for="ciudad_nacimiento">Ciudad de nacimiento</label>
+              </FloatLabel>
+            </div>
+
+
+            <div class="p-field w-full">
+              <FloatLabel variant="in">
+                <IconField>
+                  <DatePicker v-model="form.datos_personales.fecha_nacimiento"
+                    :class="{ 'p-invalid': errors.datos_personales.fecha_nacimiento }" dateFormat="yy-mm-dd" showIcon
+                    fluid />
+                </IconField>
+                <label for="fecha_nacimiento">Fecha nacimiento</label>
+              </FloatLabel>
+            </div>
+
+
 
             <div class="p-field">
               <FloatLabel variant="in">
@@ -1260,15 +1279,6 @@ onMounted(() => {
               </FloatLabel>
             </div>
 
-            <div class="p-field">
-              <FloatLabel variant="in">
-                <IconField>
-                  <InputText v-model="form.datos_personales.ciudad_nacimiento" id="ciudad_nacimiento" size="small"
-                    :class="{ 'p-invalid': errors.datos_personales.ciudad_nacimiento }" fluid />
-                </IconField>
-                <label for="ciudad_nacimiento">Ciudad de nacimiento</label>
-              </FloatLabel>
-            </div>
 
 
             <div class="p-field">
@@ -1280,6 +1290,8 @@ onMounted(() => {
                 </IconField>
               </FloatLabel>
             </div>
+
+
 
             <div class="p-field">
               <FloatLabel variant="in">
@@ -1326,14 +1338,13 @@ onMounted(() => {
             <div class="p-field">
               <FloatLabel variant="in">
                 <IconField>
-                  <InputNumber v-model="form.datos_personales.cantidad_personas_viven_casa"
-                    placeholder="Cantidad de personas que viven en casa" id="cantidad_personas_viven_casa" size="small"
-                    :class="{ 'p-invalid': errors.datos_personales.cantidad_personas_viven_casa }" fluid
-                    mode="decimal" />
+                  <Select id="option" v-model="form.datos_personales.estado_civil" :options="lista_estado_civil"
+                    optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.estado_civil }" fluid />
+                  <label for="estado_civil">Estado civil</label>
                 </IconField>
-                <label for="cantidad_personas_viven_casa">Cantidad de personas que viven en casa</label>
               </FloatLabel>
             </div>
+
 
             <div class="p-field">
               <FloatLabel variant="in">
@@ -1342,6 +1353,18 @@ onMounted(() => {
                     :class="{ 'p-invalid': errors.datos_personales.hijos_sn }" fluid />
                   <label for="hijos_sn">Tiene hijos</label>
                 </IconField>
+              </FloatLabel>
+            </div>
+
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField>
+                  <InputNumber v-model="form.datos_personales.cantidad_personas_viven_casa"
+                    placeholder="Cantidad de personas que viven en casa" id="cantidad_personas_viven_casa" size="small"
+                    :class="{ 'p-invalid': errors.datos_personales.cantidad_personas_viven_casa }" fluid
+                    mode="decimal" />
+                </IconField>
+                <label for="cantidad_personas_viven_casa">Cantidad de personas que viven en casa</label>
               </FloatLabel>
             </div>
 
@@ -1376,6 +1399,19 @@ onMounted(() => {
                 <label for="alergico_descripcion">Alergias</label>
               </FloatLabel>
             </div>
+
+            <div class="p-field">
+              <FloatLabel variant="in">
+                <IconField class="w-full">
+                  <Select id="option" v-model="form.datos_personales.grupo_sanguineo" :options="lista_grupo_sanguineo"
+                    optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.grupo_sanguineo }" fluid />
+                  <label for="grupo_sanguineo">Grupo Sanguíneo</label>
+                </IconField>
+              </FloatLabel>
+            </div>
+
+
+
           </div>
         </form>
       </Panel>
@@ -1753,14 +1789,14 @@ onMounted(() => {
               <Column v-for="col of columns_entidad_financiera" :key="col.field" :field="col.field"
                 :header="col.header">
                 <template #body="{ data, field }">
-                  {{ field === 'numero_producto' ? formatCurrency(data[field]) : data[field] }}
+                  {{ field === 'monto' ? formatCurrency(data[field]) : data[field] }}
                 </template>
                 <template #editor="{ data, field }">
-                  <template v-if="field !== 'numero_producto'">
-                    <InputText v-model="data[field]" autofocus fluid />
+                  <template v-if="field !== 'monto'">
+                    <InputText v-model="data[field]" fluid />
                   </template>
                   <template v-else>
-                    <InputNumber v-model="data[field]" mode="currency" currency="USD" locale="en-US" autofocus fluid />
+                    <InputNumber v-model="data[field]" mode="currency" currency="USD" locale="en-US" fluid />
                   </template>
                 </template>
               </Column>
@@ -1777,7 +1813,7 @@ onMounted(() => {
                     'p-invalid': errors.sagrilaft.operaciones_internacionales.contrato_servidor_publico_extranjero_sn,
                   }" fluid />
               </IconField>
-              <label for="contrato_servidor_publico_extranjero_sn">servidor público E.</label>
+              <label for="contrato_servidor_publico_extranjero_sn">Relacion con servidores publicos extranjeros</label>
             </FloatLabel>
           </div>
 
@@ -1787,13 +1823,12 @@ onMounted(() => {
               <IconField>
                 <InputText
                   v-model="form.sagrilaft.operaciones_internacionales.contrato_servidor_publico_extranjero_detalles"
-                  placeholder="Contrato servidor público E." id="contrato_servidor_publico_extranjero_detalles"
-                  size="small" :class="{
+                  placeholder="Contrato" id="contrato_servidor_publico_extranjero_detalles" size="small" :class="{
                     'p-invalid':
                       errors.sagrilaft.operaciones_internacionales.contrato_servidor_publico_extranjero_detalles,
                   }" fluid />
               </IconField>
-              <label for="contrato_servidor_publico_extranjero_detalles">Contrato servidor público E. D. </label>
+              <label for="contrato_servidor_publico_extranjero_detalles">Que tipo de Relacion contractual</label>
             </FloatLabel>
           </div>
         </div>
@@ -1837,7 +1872,7 @@ onMounted(() => {
 
           <div class="p-field w-full">
             <FloatLabel variant="in">
-              <InputText v-model="form.sagrilaft.informacion_financiera.otro_ingresos_mensuales"
+              <InputNumber v-model="form.sagrilaft.informacion_financiera.otro_ingresos_mensuales"
                 id="otro_ingresos_mensuales" size="small" mode="currency" currency="USD" locale="en-US" :class="{
                   'p-invalid': errors.sagrilaft.informacion_financiera.otro_ingresos_mensuales,
                 }" fluid />
@@ -1862,7 +1897,8 @@ onMounted(() => {
             <FloatLabel variant="in">
               <IconField>
                 <InputNumber v-model="form.sagrilaft.informacion_financiera.otro_egresos_mensuales"
-                  placeholder="Otros egresos mensuales" id="otro_egresos_mensuales" size="small" :class="{
+                  placeholder="Otros egresos mensuales" id="otro_egresos_mensuales" size="small" mode="currency"
+                  currency="USD" locale="en-US" :class="{
                     'p-invalid': errors.sagrilaft.informacion_financiera.otro_egresos_mensuales,
                   }" fluid />
               </IconField>
@@ -2023,10 +2059,10 @@ onMounted(() => {
                 </template>
                 <template #editor="{ data, field }">
                   <template v-if="field !== 'numero_producto'">
-                    <InputText v-model="data[field]" autofocus fluid />
+                    <InputText v-model="data[field]" fluid />
                   </template>
                   <template v-else>
-                    <InputText v-model="data[field]"  autofocus fluid />
+                    <InputText v-model="data[field]" fluid />
                   </template>
                 </template>
               </Column>
