@@ -24,7 +24,22 @@ export function ApiUser() {
       body: JSON.stringify({ identificacion, email, password, username }),
     })
     if (!response.ok) {
-      throw new Error('Registro fallido')
+      let errorMsg = 'Error al registrar usuario'
+      try {
+        const errorData = await response.json()
+        if (errorData) {
+          if (Array.isArray(errorData.message)) {
+            errorMsg = errorData.message.join(', ')
+          } else if (typeof errorData.message === 'string') {
+            errorMsg = errorData.message
+          } else if (typeof errorData.error === 'string') {
+            errorMsg = errorData.error
+          }
+        }
+      } catch (e) {
+        errorMsg = response.statusText || errorMsg
+      }
+      throw new Error(errorMsg)
     }
     return await response.json()
   }
@@ -41,7 +56,7 @@ export function ApiUser() {
     return await response.json()
   }
 
-  async function getUpdatePassword({  identificacion, password, newPassword }) {
+  async function getUpdatePassword({ identificacion, password, newPassword }) {
     // Aquí puedes usar fetch o axios
     const response = await fetch(API + `/auth/update-password/${identificacion}`, {
       method: 'POST',

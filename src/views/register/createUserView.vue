@@ -36,31 +36,46 @@ const resolver = ref(
     z.object({
       password: z
         .string()
-        .min(6, { message: 'Minimum 6 characters.' })
-        .max(20, { message: 'Maximum 20 characters.' })
+        .min(6, { message: 'Minimo 6 caracteres.' })
+        .max(20, { message: 'Maximo 20 caracteres.' })
         .refine((value) => /[a-z]/.test(value), {
-          message: 'Must have a lowercase letter.',
+          message: 'Debe tener una minuscula.',
         })
         .refine((value) => /[A-Z]/.test(value), {
-          message: 'Must have an uppercase letter.',
+          message: 'Debe tener una mayuscula.',
         })
         .refine((value) => /\d/.test(value), {
-          message: 'Must have a number.',
+          message: 'Debe tener un numero.',
         }),
     }),
   ),
 )
 
 const schema = yup.object({
-  email: yup.string().required().email().label('Email address'),
-  username: yup.string().required().label('Username'),
-  password: yup.string().required().min(6).label('Password'),
+  email: yup
+    .string()
+    .required('El correo electrónico es obligatorio')
+    .email('Debe ser un correo electrónico válido')
+    .label('Dirección de email'),
+  username: yup
+    .string()
+    .required('El nombre de usuario es obligatorio')
+    .label('Nombre de usuario'),
+  password: yup
+    .string()
+    .required('La contraseña es obligatoria')
+    .min(6, 'La contraseña debe tener al menos 6 caracteres')
+    .label('Contraseña'),
   passwordConfirm: yup
     .string()
-    .oneOf([yup.ref('password')], 'Passwords must match')
-    .required()
-    .label('Password confirmation'),
-  terms: yup.boolean().required().isTrue('You must agree to terms and conditions').label('terms agreement'),
+    .oneOf([yup.ref('password')], 'Las contraseñas deben coincidir')
+    .required('La confirmación de contraseña es obligatoria')
+    .label('Confirmación de contraseña'),
+  terms: yup
+    .boolean()
+    .required('Debe aceptar los términos y condiciones')
+    .isTrue('Debe aceptar los términos y condiciones')
+    .label('Aceptación de términos y condiciones'),
 })
 
 const { defineField, handleSubmit, resetForm, errors } = useForm({
@@ -149,52 +164,34 @@ onMounted(() => {
   <div class="flex flex-col min-h-screen items-center justify-between background-main transition-colors duration-300">
     <div class="flex items-center justify-center flex-1 w-full">
       <Card
-        class="flex flex-col text-center py-8 px-6 rounded-2xl w-full max-w-md shadow-lg backdrop-blur-md bg-[var(--p-surface-card)] transition-colors duration-300"
-      >
+        class="flex flex-col text-center py-8 px-6 rounded-2xl w-full max-w-md shadow-lg backdrop-blur-md bg-[var(--p-surface-card)] transition-colors duration-300">
         <template #content>
           <div class="text-center mb-5">
             <Avatar :image="avatar_create" size="xlarge" class="mr-2" />
             <div class="text-900 text-3xl font-medium mb-3">Crear Usuario</div>
 
-            <Button label="Volver a Iniciar Sesión" variant="outlined" icon="pi pi-arrow-left" @click="goRouteLogin()" />
+            <Button label="Volver a Iniciar Sesión" variant="outlined" icon="pi pi-arrow-left"
+              @click="goRouteLogin()" />
 
           </div>
-          <Form
-            id="createUser"
-            name="createUser"
-            autocomplete="on"
-            v-slot="$form"
-            :resolver="resolver"
-            @submit="onSubmit"
-          >
+          <Form id="createUser" name="createUser" autocomplete="on" v-slot="$form" :resolver="resolver"
+            @submit="onSubmit">
             <div class="flex flex-col gap-2 mb-3">
               <IconField icon-position="left" class="w-full Message">
                 <InputIcon id="username" class="pi pi-user"> </InputIcon>
-                <InputText
-                  v-model.trim="username"
-                  type="text"
-                  class="flex-auto w-full"
-                  placeholder="Numero Identificacion"
-                  variant="filled"
-                  aria-describedby="username-help"
-                />
+                <InputText v-model.trim="username" type="text" class="flex-auto w-full"
+                  placeholder="Numero Identificacion" variant="filled" aria-describedby="username-help" />
               </IconField>
               <Message v-if="errors.username" aria-describedby="username-help" class="p-error">{{
                 errors.username
-              }}</Message>
+                }}</Message>
             </div>
 
             <div class="flex flex-col gap-2 mb-3">
               <IconField icon-position="left" class="w-full Message">
                 <InputIcon id="email" class="pi pi-envelope"> </InputIcon>
-                <InputText
-                  v-model.trim="email"
-                  type="email"
-                  class="flex-auto w-full"
-                  placeholder="Email"
-                  variant="filled"
-                  aria-describedby="email-help"
-                />
+                <InputText v-model.trim="email" type="email" class="flex-auto w-full" placeholder="Email"
+                  variant="filled" aria-describedby="email-help" />
               </IconField>
               <Message v-if="errors.email" id="email-help" class="p-error">{{ errors.email }}</Message>
             </div>
@@ -205,25 +202,12 @@ onMounted(() => {
               <IconField icon-position="left" class="w-full Message">
                 <InputIcon class="pi pi-lock"> </InputIcon>
 
-                <Password
-                  name="password"
-                  v-model="password"
-                  placeholder="Password"
-                  class="flex-auto w-full"
-                  variant="filled"
-                  :feedback="false"
-                  toggle-mask
-                />
+                <Password name="password" v-model="password" placeholder="Password" class="flex-auto w-full"
+                  variant="filled" :feedback="false" toggle-mask />
               </IconField>
               <template v-if="$form.password?.invalid">
-                <Message
-                  v-for="(error, index) of $form.password.errors"
-                  :key="index"
-                  severity="error"
-                  size="small"
-                  variant="simple"
-                  >{{ error.message }}</Message
-                >
+                <Message v-for="(error, index) of $form.password.errors" :key="index" severity="error" size="small"
+                  variant="simple">{{ error.message }}</Message>
               </template>
             </div>
 
@@ -233,18 +217,12 @@ onMounted(() => {
               <IconField icon-position="left" class="w-full Message">
                 <InputIcon class="pi pi-lock"> </InputIcon>
 
-                <Password
-                  v-model="passwordConfirm"
-                  class="w-full"
-                  placeholder="Repetir Password"
-                  variant="filled"
-                  :feedback="false"
-                  toggle-mask
-                />
+                <Password v-model="passwordConfirm" class="w-full" placeholder="Repetir Password" variant="filled"
+                  :feedback="false" toggle-mask />
               </IconField>
               <Message v-if="errors.passwordConfirm" id="email-help" class="p-error">{{
                 errors.passwordConfirm
-              }}</Message>
+                }}</Message>
             </div>
 
             <!-- Termins -->

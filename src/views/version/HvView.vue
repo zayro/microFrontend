@@ -79,7 +79,6 @@ const defaultFormData = {
     pais_residencia: '',
     ciudad_residencia: '',
     direccion_residencia: '',
-    estrato: '',
     correo_electronico: user.value.email,
     telefono: '',
     genero: '',
@@ -94,13 +93,6 @@ const defaultFormData = {
     hijos_numeros: '',
     cantidad_personas_viven_casa: '',
     grupo_sanguineo: '',
-
-  },
-  estudio: {
-    nivel: '',
-    nombre: '',
-    anio_cursado: '',
-    titulo_obtenido: '',
   },
   tallas: {
     calzado: '',
@@ -178,7 +170,6 @@ const errors = reactive({
     pais_residencia: '',
     ciudad_residencia: '',
     direccion_residencia: '',
-    estrato: '',
     correo_electronico: '',
     telefono: '',
     genero: '',
@@ -217,10 +208,6 @@ const errors = reactive({
       funciones: '',
     },
   ],
-  estudio: {
-    nivel: '',
-    nombre: '',
-  },
   estudios: [
     {
       nombre: '',
@@ -453,15 +440,6 @@ function parseDate(dateStr) {
   return isNaN(d.getTime()) ? null : d
 }
 
-function removeCharacterPhone(valuePhone) {
-  if (!valuePhone) return ''
-  // Eliminar todos los caracteres que no sean dígitos
-  const valueReturn = valuePhone.replace(/\D/g, '')
-  console.log('removeCharacterPhone ~ valueReturn', valueReturn)
-
-  return valueReturn
-}
-
 
 async function onSubmitNoValidate() {
 
@@ -484,10 +462,6 @@ async function onSubmitNoValidate() {
 
     if (formCopy.datos_personales.fecha_documento_expedicion) {
       formCopy.datos_personales.fecha_documento_expedicion = formatDate(formCopy.datos_personales.fecha_documento_expedicion)
-    }
-
-    if (formCopy.datos_personales.telefono) {
-      formCopy.datos_personales.telefono = removeCharacterPhone(formCopy.datos_personales.telefono)
     }
 
     if (formCopy.datos_personales.fecha_nacimiento) {
@@ -556,7 +530,6 @@ async function onSubmitNoValidate() {
   }
 
 }
-
 async function onSubmit() {
   if (validate()) {
     submitted.value = true
@@ -588,11 +561,6 @@ async function onSubmit() {
         formCopy.sagrilaft.informacion_financiera.fecha_corte = formatDate(
           formCopy.sagrilaft.informacion_financiera.fecha_corte,
         )
-      }
-
-
-      if (formCopy.datos_personales.telefono) {
-        formCopy.datos_personales.telefono = removeCharacterPhone(formCopy.datos_personales.telefono)
       }
 
       if (formCopy.sagrilaft.personas_expuestas_politicamente.fecha_desde_reconocimiento) {
@@ -983,7 +951,112 @@ onMounted(() => {
               </div>
             </div>
 
+            <!-- Experiencia Laboral -->
+            <div class="card gap-3 mb-4 w-full">
+              <Panel class="p-panel-noborder" toggleable :collapsed="true">
+                <template #header>
+                  <div class="flex items-center gap-2">
+                    <strong class="font-bold">Experiencia laboral</strong>
+                    <div>
+                      <Button icon="pi pi-pen-to-square" severity="info" raised rounded text
+                        @click="openDialogExperienciaAgregar()" />
+                    </div>
+                  </div>
+                </template>
 
+                <div v-if="form.experiencia_laboral.length > 0">
+                  <Timeline :value="form.experiencia_laboral" align="left" class="w-full md:w-90rem">
+                    <template #opposite="slotProps">
+                      <div class="flex flex-row justify-end">
+                        <div class="pl-2">
+                          <Button icon="pi pi-pen-to-square" variant="text" severity="warn" raised rounded
+                            aria-label="Filter" @click="openDialogExperienciaEditar(slotProps.index)" />
+                        </div>
+
+                        <div class="pl-2">
+                          <Button icon="pi pi-trash" severity="danger" variant="text" raised rounded aria-label="Filter"
+                            @click="openDialogExperienciaEliminar(slotProps.index)" />
+                        </div>
+                      </div>
+                    </template>
+                    <template #content="slotProps">
+                      <div class="flex flex-row items-left justify-between">
+                        <div class="flex flex-col items-left justify-between">
+                          <div class="mb-2">
+                            <small class="text-surface-500 dark:text-surface-400">
+                              <span> Empresa: {{ slotProps.item.nombre_empresa }}</span> - <span> Cargo:</span>
+                              {{ slotProps.item.cargo }}</small>
+                          </div>
+
+                          <div>
+                            <small class="text-surface-500 dark:text-surface-400">
+                              <p>
+                                {{ formatDate(slotProps.item.fecha_inicio) }} -
+                                {{ formatDate(slotProps.item.fecha_fin) }}
+                              </p>
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                  </Timeline>
+                </div>
+              </Panel>
+            </div>
+
+            <!-- Estudios -->
+            <div class="card gap-3 mb-4 w-full">
+              <Panel class="p-panel-noborder" toggleable :collapsed="true">
+                <template #header>
+                  <div class="flex items-center gap-2">
+                    <strong class="font-bold">Estudios</strong>
+                    <div>
+                      <Button icon="pi pi-pen-to-square" severity="info" raised rounded text
+                        @click="openDialogEducacionAgregar()" />
+                    </div>
+                  </div>
+                </template>
+
+                <div v-if="form.estudios.length > 0" class="flex flex-row items-left justify-start">
+                  <Timeline :value="form.estudios" align="left" class="w-full md:w-90rem">
+                    <template #opposite="slotProps">
+                      <div class="flex flex-row justify-end">
+                        <div class="pl-2">
+                          <Button icon="pi pi-pen-to-square" variant="text" severity="warn" raised rounded
+                            aria-label="Filter" @click="openDialogEducacionEditar(slotProps.index)" />
+                        </div>
+
+                        <div class="pl-2">
+                          <Button icon="pi pi-trash" severity="danger" variant="text" raised rounded aria-label="Filter"
+                            @click="openDialogEducacionEliminar(slotProps.index)" />
+                        </div>
+                      </div>
+                    </template>
+
+                    <template #content="slotProps">
+                      <div class="flex flex-row items-left justify-between">
+                        <div class="flex flex-col items-left justify-between">
+                          <div class="mb-2">
+                            <small class="text-surface-500 dark:text-surface-400">
+                              <span> Estudio: {{ slotProps.item.nombre }}</span> - <span> Nivel:</span>
+                              {{ slotProps.item.nivel.label }}</small>
+                          </div>
+
+                          <div>
+                            <small class="text-surface-500 dark:text-surface-400">
+                              <p>
+                                {{ formatDate(slotProps.item.fecha_inicio) }} -
+                                {{ formatDate(slotProps.item.fecha_fin) }}
+                              </p>
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                  </Timeline>
+                </div>
+              </Panel>
+            </div>
 
             <!-- Sagrilaft -->
             <div class="card gap-3 mb-4 w-full">
@@ -1125,17 +1198,6 @@ onMounted(() => {
                     :class="{ 'p-invalid': errors.datos_personales.direccion_residencia }" fluid />
                 </IconField>
                 <label for="direccion_residencia">Dirección de residencia</label>
-              </FloatLabel>
-            </div>
-
-            <div class="p-field">
-              <FloatLabel variant="in">
-                <IconField>
-                  <Select id="option" v-model="form.datos_personales.estrato"
-                    :options="[{ label: '1', value: 1 }, { label: '2', value: 2 }, { label: '3', value: 3 }, { label: '4', value: 4 }, { label: '5', value: 5 }, { label: '6', value: 6 }]"
-                    optionLabel="label" :class="{ 'p-invalid': errors.datos_personales.estrato }" fluid />
-                </IconField>
-                <label for="estrato">Estrato</label>
               </FloatLabel>
             </div>
 
@@ -1391,79 +1453,31 @@ onMounted(() => {
         </div>
       </Panel>
 
-      <Panel header="Estudios" class="p-panel-noborder">
-        <div class="grid lg:grid-cols-3 grid-cols-1 gap-2">
-
-
+      <Panel header="Datos de postulación" class="p-panel-noborder">
+        <div class="grid lg:grid-cols-2 grid-cols-1 gap-2">
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <Select id="nivel" class="w-full" v-model="form.estudio.nivel" :options="lista_nivel_estudio"
-                  optionLabel="label" fluid />
-              </IconField>
-              <label for="nivel">Nivel de estudio</label>
-            </FloatLabel>
-          </div>
-
-          <div class="p-field w-full">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.estudio.nombre" placeholder="Nombre de Institucion" id="nombre" size="small"
+                <InputText v-model="form.datos_postulacion.nombre_empresa" placeholder="Nombre de la empresa"
+                  id="nombre_empresa" size="small" :class="{ 'p-invalid': errors.datos_postulacion.nombre_empresa }"
                   fluid />
               </IconField>
-              <label for="nombre">Institucion</label>
+              <label for="nombre_empresa">Nombre de la empresa</label>
             </FloatLabel>
           </div>
 
           <div class="p-field w-full">
             <FloatLabel variant="in">
               <IconField>
-                <InputText v-model="form.estudio.titulo_obtenido" placeholder="Titulo Obtenido" id="titulo_obtenido" size="small"
+                <InputText v-model="form.datos_postulacion.cargo_postulado" placeholder="Cargo postulado"
+                  id="cargo_postulado" size="small" :class="{ 'p-invalid': errors.datos_postulacion.cargo_postulado }"
                   fluid />
               </IconField>
-              <label for="titulo_obtenido">Titulo Obtenido</label>
+              <label for="cargo_postulado">Cargo postulado</label>
             </FloatLabel>
           </div>
-
-
-          <div class="p-field w-full">
-            <FloatLabel variant="in">
-              <IconField>
-                <Select id="actual" class="w-full" v-model="form.estudio.actual" :options="lista_estado_estudio"
-                  optionLabel="label" fluid />
-              </IconField>
-              <label for="actual">Estado Estudio</label>
-            </FloatLabel>
-          </div>
-
-          <div class="p-field w-full" v-if="form.estudio.actual.value !== '2'">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.estudio.anio_cursado" id="anio_cursado" size="small"
-                  :class="{ 'p-invalid': errors.estudio.anio_cursado }" fluid />
-              </IconField>
-              <label for="anio_cursado">año cursado</label>
-            </FloatLabel>
-          </div>
-
-
-          <div class="p-field">
-            <FloatLabel variant="in">
-              <IconField>
-                <InputText v-model="form.estudio.ciudad" id="ciudad_estudio" size="small"
-                  :class="{ 'p-invalid': errors.estudio.ciudad }" fluid />
-              </IconField>
-              <label for="ciudad_estudio">Ciudad de estudio</label>
-            </FloatLabel>
-          </div>
-
-
-
-
         </div>
       </Panel>
-
-
 
       <Panel header="Tallas" class="p-panel-noborder">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-center justify-around">
@@ -1526,7 +1540,188 @@ onMounted(() => {
     </template>
   </Dialog>
 
+  <!-- Modal Experiencia Laboral -->
+  <Dialog v-model:visible="visible_experiencia" modal header="Editar Informacion de Experiencia Laboral"
+    :data="form.experiencia_laboral[dialogIndex]" :maximizable="true" :closable="false"
+    :breakpoints="{ '960px': '75vw', '640px': '90vw', '480px': '100vw' }">
 
+    <ScrollPanel :style="{ width: '100%', height: '70vh' }">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.experiencia_laboral[dialogIndex].nombre_empresa" id="nombre_empresa" size="small"
+                :class="{ 'p-invalid': errors.experiencia_laboral.nombre_empresa }" fluid />
+            </IconField>
+            <label for="nombre_empresa">Nombre de la empresa</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.experiencia_laboral[dialogIndex].cargo" id="cargo" size="small"
+                :class="{ 'p-invalid': errors.experiencia_laboral.cargo }" fluid />
+            </IconField>
+            <label for="cargo">Cargo</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.experiencia_laboral[dialogIndex].nombre_jefe" id="nombre_jefe" size="small"
+                :class="{ 'p-invalid': errors.experiencia_laboral.nombre_jefe }" fluid />
+            </IconField>
+            <label for="nombre_jefe">Nombre del jefe</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.experiencia_laboral[dialogIndex].telefono_jefe" id="telefono_jefe" size="small"
+                :class="{ 'p-invalid': errors.experiencia_laboral.telefono_jefe }" fluid />
+            </IconField>
+            <label for="telefono_jefe">Telefono del jefe</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.experiencia_laboral[dialogIndex].salario_anterior" id="salario_anterior"
+                size="small" :class="{ 'p-invalid': errors.experiencia_laboral.salario_anterior }" fluid />
+            </IconField>
+            <label for="salario_anterior">Salario</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <Select id="actual" class="w-full" v-model="form.experiencia_laboral[dialogIndex].actual" :options="[
+                { label: 'Sí', value: true },
+                { label: 'No', value: false },
+              ]" optionLabel="label" :class="{ 'p-invalid': errors.experiencia_laboral.actual }" fluid />
+            </IconField>
+            <label for="actual">¿Actualmente trabaja aquí?</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <DatePicker v-model="form.experiencia_laboral[dialogIndex].fecha_inicio" view="month" dateFormat="mm/yy"
+                showIcon fluid />
+            </IconField>
+            <label for="fecha_inicio">Fecha de inicio</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <DatePicker v-model="form.experiencia_laboral[dialogIndex].fecha_fin" view="month" dateFormat="mm/yy"
+                showIcon fluid />
+            </IconField>
+            <label for="fecha_fin">Fecha de fin</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full md:col-span-4">
+          <FloatLabel variant="in">
+            <Textarea class="w-full" v-model="form.experiencia_laboral[dialogIndex].funciones" rows="5" cols="30"
+              fluid />
+            <label for="funciones">Funciones</label>
+          </FloatLabel>
+        </div>
+      </div>
+    </ScrollPanel>
+
+    <template #footer>
+      <Button label="Cerrar" icon="pi pi-times" severity="secondary" outlined
+        @click="limpiarArregloLaboral(dialogIndex)" />
+    </template>
+  </Dialog>
+
+  <!-- Modal Educación, Estudios -->
+  <Dialog v-model:visible="visible_educacion" modal header="Editar Informacion Estudios"
+    :data="form.estudios[dialogIndexEstudio]" :maximizable="true" :closable="false"
+    :breakpoints="{ '960px': '75vw', '640px': '90vw', '480px': '100vw' }">
+
+    <ScrollPanel :style="{ width: '100%', height: '70vh' }">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <Select id="nivel" class="w-full" v-model="form.estudios[dialogIndexEstudio].nivel"
+                :options="lista_nivel_estudio" optionLabel="label" :class="{ 'p-invalid': errors.estudios.nivel }"
+                fluid />
+            </IconField>
+            <label for="nivel">Nivel de estudio</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <InputText v-model="form.estudios[dialogIndexEstudio].nombre" placeholder="Nombre de Institucion"
+                id="nombre" size="small" :class="{ 'p-invalid': errors.estudios.nombre }" fluid />
+            </IconField>
+            <label for="nombre">Institucion</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <Select id="actual" class="w-full" v-model="form.estudios[dialogIndexEstudio].actual"
+                :options="lista_estado_estudio" optionLabel="label" :class="{ 'p-invalid': errors.estudios.actual }"
+                fluid />
+            </IconField>
+            <label for="actual">Estado Estudio</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <Select id="modalidad" class="w-full" v-model="form.estudios[dialogIndexEstudio].modalidad"
+                :options="lista_modalidad_estudio" optionLabel="label"
+                :class="{ 'p-invalid': errors.estudios.modalidad }" fluid />
+            </IconField>
+            <label for="modalidad">Modalidad de estudio</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <DatePicker v-model="form.estudios[dialogIndexEstudio].fecha_inicio" view="month" dateFormat="mm/yy"
+                showIcon fluid />
+            </IconField>
+            <label for="fecha_inicio">Fecha de inicio</label>
+          </FloatLabel>
+        </div>
+
+        <div class="p-field w-full">
+          <FloatLabel variant="in">
+            <IconField>
+              <DatePicker v-model="form.estudios[dialogIndexEstudio].fecha_fin" view="month" dateFormat="mm/yy" showIcon
+                fluid />
+            </IconField>
+            <label for="fecha_fin">Fecha de fin</label>
+          </FloatLabel>
+        </div>
+      </div>
+    </ScrollPanel>
+
+    <template #footer>
+      <Button label="Cerrar" icon="pi pi-times" severity="secondary" outlined
+        @click="limpiarArregloEducacion(dialogIndexEstudio)" />
+    </template>
+  </Dialog>
 
   <!-- Modal Sagrilaft  -->
   <Dialog v-model:visible="visible_sagrilaft" modal header="Editar Informacion." :data="form.sagrilaft"

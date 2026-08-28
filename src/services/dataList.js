@@ -1,24 +1,17 @@
 // Lista de parentesco familiar para selects
 export const lista_parentesco_familiar = [
-  { label: 'Padre', value: 'Padre' },
-  { label: 'Madre', value: 'Madre' },
-  { label: 'Hijo', value: 'Hijo' },
-  { label: 'Hija', value: 'Hija' },
-  { label: 'Hermano', value: 'Hermano' },
-  { label: 'Hermana', value: 'Hermana' },
-  { label: 'Cónyuge', value: 'Cónyuge' },
-  { label: 'Pareja', value: 'Pareja' },
-  { label: 'Abuelo', value: 'Abuelo' },
-  { label: 'Abuela', value: 'Abuela' },
-  { label: 'Nieto', value: 'Nieto' },
-  { label: 'Nieta', value: 'Nieta' },
-  { label: 'Tío', value: 'Tío' },
-  { label: 'Tía', value: 'Tía' },
-  { label: 'Sobrino', value: 'Sobrino' },
-  { label: 'Sobrina', value: 'Sobrina' },
-  { label: 'Primo', value: 'Primo' },
-  { label: 'Prima', value: 'Prima' },
-  { label: 'Otro', value: 'Otro' },
+  { label: 'Padre', value: '1' },
+  { label: 'Madre', value: '2' },
+  { label: 'Hijo(a)', value: '3' },
+  { label: 'Hermano(a)', value: '4' },
+  { label: 'Cónyuge', value: '5' },
+  { label: 'Pareja', value: '6' },
+  { label: 'Abuelo(a)', value: '7' },
+  { label: 'Nieto(a)', value: '8' },
+  { label: 'Tío(a)', value: '9' },
+  { label: 'Sobrino(a)', value: '10' },
+  { label: 'Primo(a)', value: '11' },
+  { label: 'Otro', value: '12' },
 ]
 
 // lista estado de estudio para selects
@@ -256,6 +249,7 @@ export const lista_estado_civil = [
   { label: 'Casado', value: '2' },
   { label: 'Divorciado', value: '3' },
   { label: 'Viudo', value: '4' },
+  { label: 'Union Libre', value: '5' },
 ]
 
 export const lista_genero = [
@@ -286,17 +280,24 @@ export const lista_documento = [
   { label: 'Pasaporte', value: 'PA' },
   { label: 'Tarjeta de identidad', value: 'TI' },
   { label: 'Permiso Especial Permanencia', value: 'PE' },
-  { label: 'Permiso Protección Especial', value: 'PO' },
+  { label: 'Permiso Protección Temporal', value: 'PO' },
   { label: 'Nuip', value: 'NU' },
 ]
 
 export const lista_nivel_estudio = [
-  { label: 'Primaria', value: '1' },
-  { label: 'Secundaria', value: '2' },
-  { label: 'Técnico', value: '3' },
-  { label: 'Tecnológico', value: '4' },
-  { label: 'Universitario', value: '5' },
-  { label: 'Posgrado', value: '6' },
+  { label: 'Ninguno', value: '1' },
+  { label: 'Preescolar', value: '2' },
+  { label: 'Primaria', value: '3' },
+  { label: 'Basica Secundaria', value: '4' },
+  { label: 'Media Tecnica', value: '5' },
+  { label: 'Bachiller', value: '6' },
+  { label: 'Normalista', value: '7' },
+  { label: 'Tecnico', value: '8' },
+  { label: 'Tecnologico', value: '9' },
+  { label: 'Universitario', value: '10' },
+  { label: 'Especialista', value: '11' },
+  { label: 'Magister', value: '12' },
+  { label: 'Doctorado', value: '13' },
 ]
 
 export const ProductService = {

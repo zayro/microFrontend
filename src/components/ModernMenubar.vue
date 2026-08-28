@@ -64,26 +64,7 @@ console.log('Usuario en Menubar:', confStore.getUser.value)
 
 const user = confStore.getUser
 
-const currentTime = ref('')
-
-
-
-function updateTime() {
-  const now = new Date()
-  const options = { weekday: 'short', hour: '2-digit', minute: '2-digit' }
-  currentTime.value = now.toLocaleTimeString('es-ES', options).replace('.', ':')
-}
-
-let intervalId
-
-onMounted(() => {
-  updateTime()
-  intervalId = setInterval(updateTime, 1000 * 60) // Actualiza cada minuto
-})
-
-onUnmounted(() => {
-  clearInterval(intervalId)
-})
+const appVersion = import.meta.env.VITE_APP_VERSION || '1.6'
 
 
 
@@ -199,7 +180,7 @@ const props = defineProps({
   <Menubar class="modern-menubar">
     <template #start>
 
-      <span class="font-bold text-shadow-sm uppercase font-mono"> Inscripción Hoja de Vida version 1.5
+      <span class="font-bold text-shadow-sm uppercase font-mono"> Inscripción Hoja de Vida version {{ appVersion }}
       </span>
 
       <!--
@@ -264,7 +245,7 @@ const props = defineProps({
         </IconField>
         <Message v-if="errors.passwordConfirm" id="email-help" class="p-error">{{
           errors.passwordConfirm
-          }}</Message>
+        }}</Message>
       </div>
 
 

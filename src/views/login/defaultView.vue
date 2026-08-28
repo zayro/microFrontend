@@ -12,7 +12,7 @@ import Button from 'primevue/button'
 import Image from 'primevue/image'
 import { ApiUser } from '@/api/apiUser'
 
-import login from '@/assets/img/login/logo_gu.png'
+import login from '@/assets/img/login/logo_gu.jpeg'
 
 const form = reactive({ username: '', password: '' })
 const confStore = useConfigStoreRef()
@@ -117,7 +117,7 @@ onMounted(() => {
           <div v-if="showSessionPrompt">
             <div class="text-center mb-6">
               <div class="flex items-center justify-center">
-                <Image :src="login" alt="Image" width="250" class="mx-auto mb-2" />
+                <Image :src="login" alt="Image"  class="mx-auto" />
               </div>
               <h2 class="text-xl font-semibold mb-2 text-[var(--p-text-color)]">Hola, {{ currentUser }}</h2>
               <p class="mb-5 text-gray-500">
