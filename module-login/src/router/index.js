@@ -29,7 +29,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'defaultView',
-      component: DefaultView,
+      component: liquidView,
       meta: { requiresAuth: false, label: 'Login' },
     },
     {
@@ -100,8 +100,14 @@ const router = createRouter({
       meta: { requiresAuth: false, label: 'Bienvenida' },
     },
     {
-      path: '/liquid/',
-      name: 'liquidView',
+      path: '/default',
+      name: 'defaultLoginView',
+      component: DefaultView,
+      meta: { requiresAuth: false, label: 'Login' },
+    },
+    {
+      path: '/liquid',
+      name: 'liquidLoginView',
       component: liquidView,
       meta: { requiresAuth: false, label: 'Liquid' },
     },

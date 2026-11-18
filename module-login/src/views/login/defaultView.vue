@@ -70,11 +70,13 @@ onMounted(() => {
         class="flex flex-col text-center py-8 px-6 rounded-2xl w-full max-w-md shadow-lg backdrop-blur-md bg-[var(--p-surface-card)] transition-colors duration-300">
         <template #content>
           <div class="text-center mb-6">
+
+            <!--
             <div class="flex items-center justify-center">
               <Image :src="login" alt="Image" width="250" class="mx-auto mb-2 " />
-            </div>
-            <!-- <Avatar :image="avatar" class="mx-auto mb-2 " shape="circle" />
-            <div class="text-3xl font-semibold mb-2 text-[var(--p-text-color)]">Gente Util</div> -->
+            </div>  -->
+            <Avatar :image="avatar" class="mx-auto mb-2 " shape="circle" />
+            <div class="text-3xl font-semibold mb-2 text-[var(--p-text-color)]">INICIO DE SESION</div>
             <!-- <span class="font-medium leading-6 text-[var(--p-text-secondary)]">Don't have an account?</span>
             <a class="font-medium no-underline ml-2 cursor-pointer text-[var(--p-primary-600)] hover:underline"
               @click="goRouteCreate()">Create today!</a> -->

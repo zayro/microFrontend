@@ -1,62 +1,22 @@
-# Copilot Instructions for module-hv
+# Copilot instructions for module-hv
 
-## Arquitectura y Estructura General
+These instructions supplement the repository-level `AGENTS.md` and apply to `module-hv`.
 
-- Proyecto Vue 3 con Vite, usando PrimeVue como librería principal de componentes UI.
-- Estructura principal en `src/`:
-  - `views/`: Vistas principales, cada una representa una sección funcional (ej: `HvPanelView.vue`, `hvView.vue`).
-  - `components/`: Componentes reutilizables, incluyendo íconos y widgets.
-  - `router/`: Definición de rutas de la SPA.
-  - `stores/`: Estado global (ejemplo: `counter.js`).
-  - `assets/`: Imágenes y estilos globales.
-- El flujo de datos sigue el patrón estándar de Vue: props, emits y estado reactivo.
+## Structure and patterns
 
-## Workflows de Desarrollo
+- This is a Vue 3 single-page application built with Vite. The `@` alias resolves to `src/`.
+- Keep page-level components in `src/views/`, reusable UI in `src/components/`, routes in `src/router/`, Pinia state in `src/stores/`, and shared styles/assets in `src/assets/`.
+- Use the existing PrimeVue and Tailwind CSS setup for UI changes. Follow nearby component patterns rather than assuming a single form or validation convention.
+- API functions live in `src/api/`; the configured Axios helpers live in `src/services/http-axios.js`. Reuse these where appropriate and preserve the existing environment selection in `src/env/`.
+- When adding a view, register it in `src/router/index.js` and preserve the route's existing authentication metadata and navigation behavior.
 
-- Instalar dependencias: `pnpm install`
-- Desarrollo local con recarga en caliente: `pnpm dev`
-- Build de producción: `pnpm build`
-- Linting: `pnpm lint`
-- No hay configuración de testing automatizado por defecto.
+## Commands
 
-## Convenciones y Patrones Específicos
+Run commands from this module directory, or use `pnpm --dir module-hv <script>` from the repository root:
 
-- Uso extensivo de PrimeVue: importa componentes desde `primevue/[componente]` y regístralos en `<script setup>`.
-- Formularios complejos usan `reactive` y `ref` para el manejo de estado y validación manual.
-- Los modales y paneles usan el sistema de diálogos de PrimeVue (`Dialog`, `Panel`).
-- Los estilos globales y de componentes están en `src/assets/` y scoped en cada `.vue`.
-- Los datos de opciones (ej: listas de selección) se definen como arrays de objetos en cada vista.
-- Validaciones de formularios se realizan en funciones locales, no hay librerías externas de validación.
+- `pnpm install` to install this module's dependencies.
+- `pnpm dev` to start the Vite development server.
+- `pnpm build` to create the production build.
+- `pnpm lint` to run ESLint. This script uses `--fix` and may modify files; account for that when choosing validation.
 
-## Integraciones y Dependencias
-
-- PrimeVue y sus componentes (Dropdown, Select, Button, Dialog, Panel, Timeline, etc.).
-- Vite para el build y hot reload.
-- No hay integración directa con backend/API en el template base.
-
-## Ejemplos de Patrones Clave
-
-- Para agregar un nuevo campo a un formulario, actualiza el objeto `form` reactivo y el objeto `errors` en la vista correspondiente.
-- Para agregar una nueva vista, crea un archivo en `src/views/` y registra la ruta en `src/router/index.js`.
-- Para usar un componente de PrimeVue:
-  ```js
-  import Button from 'primevue/button'
-  // ...
-  ;<Button label="Guardar" />
-  ```
-- Para manejar diálogos:
-  ```js
-  const visible = ref(false)
-  // ...
-  ;<Dialog v-model:visible="visible"> ... </Dialog>
-  ```
-
-## Archivos Clave
-
-- `src/views/hvView.vue`: Ejemplo de formulario complejo y uso de múltiples componentes PrimeVue.
-- `vite.config.js`, `eslint.config.js`: Configuración de build y linting.
-- `README.md`: Instrucciones de setup y comandos principales.
-
----
-
-Si agregas nuevas dependencias, componentes o flujos, documenta aquí los patrones relevantes para mantener la productividad de los agentes de IA.
+There is no test script in this module. Run the production build for changes that affect the application or its configuration.
