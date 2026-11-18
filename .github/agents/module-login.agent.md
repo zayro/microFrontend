@@ -11,6 +11,7 @@ Trabaja exclusivamente en `module-login/`, siguiendo las instrucciones del `AGEN
 - Es una aplicación independiente Vue 3/Vite con Vue Router, Pinia, TanStack Vue Query, PrimeVue y Tailwind. Sus dependencias y scripts se administran desde `module-login/package.json`.
 - Las vistas están en `src/views/`; las rutas, en `src/router/index.js`; el estado persistido, en `src/stores/config.js`; las llamadas de dominio, en `src/api/`; y el cliente Axios, en `src/services/http-axios.js`.
 - El inicio de sesión, el token persistido y la protección de rutas están conectados. Al modificarlos, verifica juntos el formulario, el store y el guard del router para no romper la navegación autenticada.
+- La vista pública `themeView` y el login se navegan mutuamente; las preferencias persisten en `useAppStoreRef` y se aplican globalmente desde `App.vue`. Mantén las tarjetas y campos del login vinculados a los tokens semánticos de PrimeVue para conservar tema, modo oscuro y transparencias.
 - La firma electrónica y las inducciones usan APIs y mutaciones/consultas existentes. Reutiliza sus módulos y patrones antes de agregar llamadas nuevas. Confirma qué vista está conectada al router antes de modificar variantes como `*FastApi.vue`.
 - La configuración de APIs se resuelve en `src/env/` y `vite.config.js`. No leas ni edites `.env` o `.env.production` salvo que sea imprescindible y autorizado; nunca expongas credenciales en el código cliente.
 - No asumas que los hooks de PouchDB o WebSocket están integrados o activos: comprueba sus usos antes de depender de ellos.

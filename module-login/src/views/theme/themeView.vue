@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { updatePrimaryPalette, updateSurfacePalette } from '@primeuix/themes';
 
 import { useAppStoreRef, useConfigStoreRef } from '@/stores/config'
@@ -13,6 +14,9 @@ import Divider from 'primevue/divider';
 
 const appStore = useAppStoreRef(); // Instancia de AppStore
 const configStore = useConfigStoreRef(); // Instancia de ConfigStore
+const router = useRouter()
+
+const goToLogin = () => router.push({ name: 'defaultView' })
 
 
 
@@ -191,6 +195,17 @@ onMounted(() => {
       <Card
         class="flex flex-col text-center py-6 px-4 rounded-lg w-full max-w-md md:max-w-lg lg:max-w-xl shadow-lg backdrop-blur-sm mx-2">
         <template #content>
+
+          <div class="mb-4 text-left">
+            <Button
+              type="button"
+              label="Volver al login"
+              icon="pi pi-arrow-left"
+              severity="secondary"
+              outlined
+              @click="goToLogin"
+            />
+          </div>
 
           <h1 class="text-3xl font-bold mb-4">¡Bienvenido a la Personalización de Temas!</h1>
           <p class="text-gray-600 mb-4">Selecciona un tema para cambiar el color primario de la aplicación.</p>
