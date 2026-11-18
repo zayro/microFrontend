@@ -1,0 +1,32 @@
+# Aplicaciones Vue servidas por Traefik, sin puertos publicados al host.
+services:
+  microfrontend:
+    build:
+      context: .
+    container_name: app-microfrontend
+    expose:
+      - "80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=app-observability-net
+      - "traefik.http.routers.app-microfrontend-login.rule=PathPrefix(`/web/login`)"
+      - traefik.http.routers.app-microfrontend-login.entrypoints=web
+      - traefik.http.routers.app-microfrontend-login.middlewares=app-ratelimit@docker,app-secure-headers@docker
+      - traefik.http.routers.app-microfrontend-login.service=app-microfrontend
+      - "traefik.http.routers.app-microfrontend-hv.rule=PathPrefix(`/web/frontHv`)"
+      - traefik.http.routers.app-microfrontend-hv.entrypoints=web
+      - traefik.http.routers.app-microfrontend-hv.middlewares=app-ratelimit@docker,app-secure-headers@docker
+      - traefik.http.routers.app-microfrontend-hv.service=app-microfrontend
+      - traefik.http.services.app-microfrontend.loadbalancer.server.port=80
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    name: app-observability-net

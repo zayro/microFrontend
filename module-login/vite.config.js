@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
   // En el cliente la leerías como __MY_CUSTOM_ENV__ (global definido en tiempo de build)
 
   return {
-    //base: '/web/firmaDigital/',
+    //base: '/web/login/',
     plugins: [vue(), vueDevTools(), tailwindcss()],
     resolve: {
       alias: {
