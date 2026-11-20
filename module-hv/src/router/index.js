@@ -5,8 +5,6 @@ import HvView from '../views/HvView.vue'
 // Pagina de Error 404
 import NotFoundView from '@/views/404/404.vue'
 
-import DefaultView from '@/views/login/defaultView.vue'
-
 import createUserView from '@/views/register/createUserView.vue'
 
 const router = createRouter({
@@ -20,8 +18,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'defaultView',
-      component: DefaultView,
-      meta: { requiresAuth: false, label: 'Login' },
+      redirect: { name: 'hv' },
     },
     {
       path: '/createUser',
@@ -43,8 +40,8 @@ router.beforeEach((to, from, next) => {
     const token = configStore.getToken
 
     if (!token) {
-      // Si no hay token en el store (que persiste en localStorage), redirigir al login
-      next({ name: 'defaultView' })
+      window.location.replace('/web/login/?module=hv')
+      next(false)
     } else {
       next()
     }

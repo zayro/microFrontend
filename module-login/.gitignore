@@ -26,3 +26,12 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+
+# Ignore environment files
+/vendor/
+/.env
+/.env.*
+!/.env.example
+/storage/
+*.log

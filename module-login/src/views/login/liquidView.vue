@@ -1,7 +1,7 @@
 <script setup>
-import { computed, reactive, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { useConfigStoreRef } from '@/stores/config'
+import { computed, reactive, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { openModule } from '@/services/module-session'
 import { useMutation } from '@tanstack/vue-query'
 import { useToast } from 'primevue/usetoast'
 import Card from 'primevue/card'
@@ -15,54 +15,42 @@ import { ApiUser } from '@/api/apiUser'
 
 import imgBodyBackGround from '@/assets/img/background/pattern5_black.png'
 import imgFirmaElectronica from '@/assets/img/background/abstract1.jpg'
-import imgInducciones from '@/assets/img/background/polygon13.jpg'
 import avatar from '@/assets/img/profile/avatar/user_256x256.png'
 
 const form = reactive({ username: '', password: '' })
 const moduleOptions = [
-  { label: 'Inicio', background: imgBodyBackGround },
-  { label: 'Firma Electrónica', background: imgFirmaElectronica },
-  { label: 'Inducciones', background: imgInducciones },
+  { label: 'Hoja de Vida', value: 'hv', background: imgBodyBackGround },
+  { label: 'Firma Electrónica', value: 'firma', background: imgFirmaElectronica },
 ]
-const selectedModule = ref(moduleOptions[0])
+const route = useRoute()
+const selectedModule = ref(moduleOptions.find((option) => option.value === route.query.module) ?? moduleOptions[0])
 const backgroundStyle = computed(() => ({
   '--login-background-image': `url("${selectedModule.value.background}")`,
 }))
-const conf = useConfigStoreRef()
 const router = useRouter()
 const toast = useToast()
 
 const validateForm = computed(() => form.username !== '' && form.password !== '')
-const { postLogin } = ApiUser()
+const { postLogin, postLoginHv } = ApiUser()
 
-const goRouteCreate = () => router.push({ name: 'createUserView' })
+const goRouteCreate = () => window.location.assign('/web/frontHv/createUser')
 const goRouteRecovery = () => router.push({ name: 'recoveryPass' })
 const goRouteTheme = () => router.push({ name: 'themeView' })
 
-const { mutate: mutateLogin, data, error, isPending, isError, isSuccess, isLoading } = useMutation({
-  mutationFn: postLogin,
+const { mutate: mutateLogin, isPending } = useMutation({
+  mutationFn: async ({ module, credentials }) => {
+    const response = await (module === 'hv' ? postLoginHv : postLogin)(credentials)
+    openModule(module, response, credentials.username)
+  },
+  onError: (error) => {
+    toast.add({ severity: 'error', summary: 'Error', detail: error.message || 'Error desconocido', life: 4000 })
+  },
 })
 
 const handleLogin = () => {
-  mutateLogin({ ...form })
+  if (!validateForm.value || isPending.value) return
+  mutateLogin({ module: selectedModule.value.value, credentials: { ...form } })
 }
-
-watch(data, (val) => {
-  if (val) conf.setToken(val.data.token)
-})
-
-watch(isSuccess, (val) => {
-  if (val) {
-    toast.add({ severity: 'success', summary: 'Éxito', detail: '¡Ingreso exitoso!', life: 3000 })
-    router.push({ name: 'welcomeView' })
-  }
-})
-
-watch(isError, (val) => {
-  if (val) {
-    toast.add({ severity: 'error', summary: 'Error', detail: error.value?.message || 'Error desconocido', life: 4000 })
-  }
-})
 
 onMounted(() => {
   document.body.style.overflowX = 'hidden'
@@ -96,6 +84,7 @@ onMounted(() => {
               v-model="selectedModule"
               input-id="login-module"
               :options="moduleOptions"
+              :disabled="isPending"
               option-label="label"
               aria-label="Módulos"
               class="w-full"
@@ -119,7 +108,7 @@ onMounted(() => {
           </div>
 
           <div class="flex items-center justify-center gap-3 mb-4">
-            <Button type="button" label="Sign In" class="w-full" :disabled="!validateForm" @click="handleLogin(form)" />
+            <Button type="button" label="Sign In" class="w-full" :loading="isPending" :disabled="!validateForm || isPending" @click="handleLogin" />
           </div>
 
           <div class="flex items-center justify-center gap-2 mb-2">

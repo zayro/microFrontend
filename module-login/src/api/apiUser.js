@@ -34,5 +34,15 @@ export function ApiUser() {
   return {
     postLogin,
     postLoginMb,
+    async postLoginHv({ username, password }) {
+      const base = import.meta.env.PROD ? '/web/hv/api' : '/api'
+      const response = await fetch(`${base}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      })
+      if (!response.ok) throw new Error('Login fallido')
+      return await response.json()
+    },
   }
 }

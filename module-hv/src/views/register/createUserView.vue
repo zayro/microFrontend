@@ -78,7 +78,7 @@ const [terms] = defineField('terms')
 const router = useRouter()
 
 const goRouteLogin = () => {
-  router.push({ name: 'default' })
+  window.location.assign('/web/login/?module=hv')
 }
 
 const create = (values) => {
@@ -129,7 +129,7 @@ const {
 watch(isSuccess, (val) => {
   if (val) {
     toast.add({ severity: 'success', summary: 'Éxito', detail: '¡Ingreso exitoso!', life: 3000 })
-    router.push({ name: 'hv' })
+    goRouteLogin()
   }
 })
 

@@ -3,8 +3,8 @@ import { CONSTANT } from '@/env/index.js'
 
 const URL = CONSTANT.URL.TARGET
 
-const TOKEN = window.localStorage.getItem('accessToken')
-  ? JSON.parse(window.localStorage.getItem('accessToken')).token
+const TOKEN = window.localStorage.getItem('conf_hv')
+  ? JSON.parse(window.localStorage.getItem('conf_hv')).token
   : null
 
 const http = (url_value = URL) => {

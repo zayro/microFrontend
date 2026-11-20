@@ -1,17 +1,21 @@
 # Aplicaciones Vue servidas por Traefik, sin puertos publicados al host.
 services:
   microfrontend:
+    # Construye la imagen Nginx desde el Dockerfile de esta carpeta.
     build:
       context: .
     container_name: app-microfrontend
+    # Expone el puerto solo a otros contenedores de la red, no al host.
     expose:
       - "80"
+    # Verifica que Nginx responda en su endpoint de salud antes de considerarlo listo.
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
       interval: 10s
       timeout: 3s
       retries: 5
       start_period: 10s
+    # Traefik enruta las rutas de login y HV al mismo servicio Nginx.
     labels:
       - traefik.enable=true
       - traefik.docker.network=app-observability-net
@@ -23,10 +27,15 @@ services:
       - traefik.http.routers.app-microfrontend-hv.entrypoints=web
       - traefik.http.routers.app-microfrontend-hv.middlewares=app-ratelimit@docker,app-secure-headers@docker
       - traefik.http.routers.app-microfrontend-hv.service=app-microfrontend
+      - "traefik.http.routers.app-microfrontend-firma.rule=PathPrefix(`/web/frontfirma`)"
+      - traefik.http.routers.app-microfrontend-firma.entrypoints=web
+      - traefik.http.routers.app-microfrontend-firma.middlewares=app-ratelimit@docker,app-secure-headers@docker
+      - traefik.http.routers.app-microfrontend-firma.service=app-microfrontend
       - traefik.http.services.app-microfrontend.loadbalancer.server.port=80
     networks:
       - app-net
 
 networks:
   app-net:
+    # Nombre compartido con Traefik para permitir el enrutamiento interno.
     name: app-observability-net
